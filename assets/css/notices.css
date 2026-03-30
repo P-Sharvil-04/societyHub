@@ -1,0 +1,204 @@
+/* ================ NOTICES PAGE SPECIFIC STYLES ================ */
+/* Only styles unique to the notices page – complements common.css */
+
+/* Notices grid */
+.notices-grid {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 20px;
+	margin-bottom: 30px;
+}
+
+@media (min-width: 640px) {
+	.notices-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+@media (min-width: 1024px) {
+	.notices-grid {
+		grid-template-columns: repeat(3, 1fr);
+	}
+}
+
+@media (min-width: 1400px) {
+	.notices-grid {
+		grid-template-columns: repeat(4, 1fr);
+	}
+}
+
+.notice-card {
+	background: var(--card-bg);
+	border-radius: 16px;
+	border: 1px solid var(--border);
+	padding: 20px;
+	transition: all 0.3s;
+	display: flex;
+	flex-direction: column;
+	position: relative;
+	overflow: hidden;
+}
+
+.notice-card:hover {
+	transform: translateY(-4px);
+	box-shadow: var(--shadow-lg);
+}
+
+.notice-card.important {
+	border-left: 4px solid var(--danger);
+}
+
+.notice-card.event {
+	border-left: 4px solid var(--success);
+}
+
+.notice-card.maintenance {
+	border-left: 4px solid var(--warning);
+}
+
+.notice-card.general {
+	border-left: 4px solid var(--primary);
+}
+
+.notice-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	margin-bottom: 15px;
+}
+
+.notice-type {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.notice-type i {
+	font-size: 1.2rem;
+	color: var(--primary);
+}
+
+.notice-type h4 {
+	font-size: 0.9rem;
+	font-weight: 700;
+	color: var(--text-dark);
+}
+
+.notice-priority {
+	padding: 4px 10px;
+	border-radius: 20px;
+	font-size: 0.65rem;
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.notice-priority.high {
+	background: rgba(231, 76, 60, 0.1);
+	color: var(--danger);
+}
+
+.notice-priority.medium {
+	background: rgba(243, 156, 18, 0.1);
+	color: var(--warning);
+}
+
+.notice-priority.low {
+	background: rgba(52, 152, 219, 0.1);
+	color: var(--primary);
+}
+
+.notice-title {
+	font-size: 1.1rem;
+	font-weight: 700;
+	color: var(--text-dark);
+	margin-bottom: 10px;
+	line-height: 1.4;
+}
+
+.notice-description {
+	font-size: 0.85rem;
+	color: var(--text-light);
+	margin-bottom: 20px;
+	line-height: 1.6;
+	flex: 1;
+}
+
+.notice-meta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 15px;
+	margin-bottom: 15px;
+	font-size: 0.75rem;
+	color: var(--text-light);
+}
+
+.notice-meta i {
+	margin-right: 5px;
+	color: var(--primary);
+}
+
+.notice-footer {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-top: 10px;
+	padding-top: 15px;
+	border-top: 1px solid var(--border);
+}
+
+.notice-status {
+	padding: 4px 10px;
+	border-radius: 20px;
+	font-size: 0.65rem;
+	font-weight: 600;
+}
+
+.notice-status.active {
+	background: rgba(39, 174, 96, 0.1);
+	color: var(--success);
+}
+
+.notice-status.expired {
+	background: rgba(231, 76, 60, 0.1);
+	color: var(--danger);
+}
+
+.notice-status.scheduled {
+	background: rgba(243, 156, 18, 0.1);
+	color: var(--warning);
+}
+
+.notice-actions {
+	display: flex;
+	gap: 8px;
+}
+
+/* View toggle for table view (unique to notices) */
+.view-toggle {
+	display: flex;
+	gap: 5px;
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	padding: 4px;
+	background: var(--light-bg);
+}
+
+.view-btn {
+	padding: 6px 12px;
+	border-radius: 8px;
+	border: none;
+	background: transparent;
+	color: var(--text-dark);
+	cursor: pointer;
+	font-size: 0.8rem;
+	display: flex;
+	align-items: center;
+	gap: 5px;
+}
+
+.view-btn.active {
+	background: var(--primary);
+	color: white;
+}
+
+/* Generic badge utility (if not already in common) */

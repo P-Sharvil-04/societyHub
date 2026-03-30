@@ -1,0 +1,491 @@
+/* ================ MEMBER MANAGEMENT PAGE SPECIFIC STYLES ================ */
+/* Only styles unique to the member management page – complements common.css */
+
+/* Page Header customizations */
+.page-title i {
+	padding: 12px;
+	border-radius: 14px;
+}
+
+.page-title h1 {
+	font-size: clamp(1.5rem, 5vw, 2rem);
+}
+
+.page-actions {
+	padding-top: 30px;
+}
+
+/* Stat card hover (if different from common) */
+.stat-card:hover {
+	transform: translateY(-4px);
+	box-shadow: var(--shadow-lg);
+}
+
+.trend-up i {
+	color: var(--success);
+}
+
+/* Filter section customizations */
+.filter-group label i {
+	color: var(--primary);
+	width: 16px;
+}
+
+.filter-select {
+	padding: 10px 12px;
+}
+
+.search-box i {
+	margin-right: 10px;
+	font-size: 0.9rem;
+}
+
+.search-box input::placeholder {
+	color: var(--text-light);
+	opacity: 0.7;
+}
+
+@media (min-width: 768px) {
+	.filter-group {
+		min-width: 180px;
+	}
+
+	.filter-select {
+		width: 160px;
+	}
+
+	.search-box {
+		width: 250px;
+	}
+}
+
+/* Committee Section */
+.committee-section {
+	background: var(--card-bg);
+	border-radius: 20px;
+	padding: 20px;
+	border: 1px solid var(--border);
+	margin-bottom: 30px;
+}
+
+.committee-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 20px;
+	flex-wrap: wrap;
+	gap: 15px;
+}
+
+.committee-header h3 {
+	font-size: 1.1rem;
+	font-weight: 700;
+	color: var(--text-dark);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.committee-header h3 i {
+	color: var(--primary);
+}
+
+.committee-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+	gap: 15px;
+}
+
+.committee-card {
+	background: var(--light-bg);
+	border-radius: 14px;
+	padding: 15px;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	transition: 0.2s;
+}
+
+.committee-card:hover {
+	transform: translateY(-2px);
+	box-shadow: var(--shadow);
+}
+
+.committee-avatar {
+	width: 48px;
+	height: 48px;
+	border-radius: 12px;
+	background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: white;
+	font-weight: 600;
+	font-size: 1.2rem;
+	flex-shrink: 0;
+}
+
+.committee-info h4 {
+	font-weight: 700;
+	font-size: 0.95rem;
+	color: var(--text-dark);
+	margin-bottom: 4px;
+}
+
+.committee-role {
+	font-size: 0.8rem;
+	color: var(--primary);
+	font-weight: 600;
+	margin-bottom: 2px;
+}
+
+.committee-term {
+	font-size: 0.7rem;
+	color: var(--text-light);
+}
+
+/* Table customizations */
+table {
+	min-width: 1200px;
+}
+
+table th {
+	padding: 16px;
+	font-size: 0.8rem;
+}
+
+table td {
+	padding: 16px;
+	font-size: 0.9rem;
+}
+
+table tr:last-child td {
+	border-bottom: none;
+}
+
+/* Staff info (used for members) */
+.staff-info {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.staff-avatar {
+	width: 44px;
+	height: 44px;
+	border-radius: 12px;
+	background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: white;
+	font-weight: 600;
+	font-size: 1rem;
+	flex-shrink: 0;
+}
+
+.staff-details h4 {
+	font-weight: 700;
+	font-size: 0.95rem;
+	color: var(--text-dark);
+	margin-bottom: 4px;
+}
+
+.staff-details span {
+	font-size: 0.75rem;
+	color: var(--text-light);
+}
+
+/* Badge variants (specific to member types and roles) */
+.member-type-badge.owner {
+	background: rgba(52, 152, 219, 0.1);
+	color: var(--primary);
+}
+
+.member-type-badge.tenant {
+	background: rgba(243, 156, 18, 0.1);
+	color: var(--warning);
+}
+
+.member-type-badge.family {
+	background: rgba(39, 174, 96, 0.1);
+	color: var(--success);
+}
+
+.role-badge {
+	background: rgba(155, 89, 182, 0.1);
+	color: #9b59b6;
+	margin-left: 5px;
+}
+
+.role-badge.chairman {
+	background: rgba(192, 57, 43, 0.1);
+	color: #c0392b;
+}
+
+.role-badge.vice-chairman {
+	background: rgba(155, 89, 182, 0.1);
+	color: #8e44ad;
+}
+
+.role-badge.secretary {
+	background: rgba(41, 128, 185, 0.1);
+	color: #2980b9;
+}
+
+.role-badge.joint-secretary {
+	background: rgba(52, 152, 219, 0.1);
+	color: #3498db;
+}
+
+.role-badge.treasurer {
+	background: rgba(39, 174, 96, 0.1);
+	color: #27ae60;
+}
+
+.role-badge.member {
+	background: rgba(155, 89, 182, 0.1);
+	color: #9b59b6;
+}
+
+.status-badge.active {
+	background: rgba(39, 174, 96, 0.1);
+	color: var(--success);
+}
+
+.status-badge.inactive {
+	background: rgba(231, 76, 60, 0.1);
+	color: var(--danger);
+}
+
+.status-badge.pending {
+	background: rgba(243, 156, 18, 0.1);
+	color: var(--warning);
+}
+
+/* Action buttons wrapper */
+.action-buttons {
+	display: flex;
+	gap: 8px;
+}
+
+.btn-icon {
+	width: 36px;
+	height: 36px;
+	font-size: 0.9rem;
+}
+
+/* Pagination customizations */
+.page-item {
+	width: 40px;
+	height: 40px;
+	font-size: 0.9rem;
+}
+
+/* Button overrides */
+.btn {
+	padding: 12px 24px;
+	border-radius: 12px;
+	font-size: 0.95rem;
+}
+
+.btn-primary {
+	background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+}
+
+.btn-sm {
+	padding: 8px 16px;
+	font-size: 0.85rem;
+	border-radius: 10px;
+}
+
+/* Modal customizations */
+.modal-content {
+	max-width: 600px;
+}
+
+.modal-close {
+	font-size: 1.5rem;
+}
+
+.modal-header h3 i {
+	color: var(--primary);
+}
+
+/* Form extras */
+.form-control::placeholder {
+	color: var(--text-light);
+	opacity: 0.7;
+}
+
+select.form-control {
+	cursor: pointer;
+}
+
+textarea.form-control {
+	resize: vertical;
+	min-height: 80px;
+}
+
+.form-row {
+	margin-bottom: 5px;
+}
+
+/* Member list (recent activity) */
+.member-list {
+	margin-top: 10px;
+}
+
+.member-item:last-child {
+	border-bottom: none;
+}
+
+.member-status {
+	padding: 6px 12px;
+	border-radius: 20px;
+	font-size: 0.7rem;
+	font-weight: 600;
+	margin-left: 52px;
+}
+
+@media (min-width: 600px) {
+	.member-status {
+		margin-left: 0;
+	}
+}
+
+.member-status.status-active {
+	background: rgba(39, 174, 96, 0.1);
+	color: var(--success);
+}
+
+.member-status.status-pending {
+	background: rgba(243, 156, 18, 0.1);
+	color: var(--warning);
+}
+
+/* Section header (if not in common) */
+.section-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 10px;
+	margin-bottom: 20px;
+}
+
+.section-header h3 {
+	font-size: 1.1rem;
+	font-weight: 700;
+	color: var(--text-dark);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.section-header h3 i {
+	color: var(--primary);
+}
+
+.view-all {
+	font-size: 0.85rem;
+}
+
+.view-all:hover {
+	text-decoration: underline;
+}
+
+/* Role selector */
+.role-selector {
+	width: 100%;
+	padding: 8px 12px;
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	background: var(--card-bg);
+	color: var(--text-dark);
+	font-size: 0.85rem;
+}
+
+/* Export menu */
+.export-wrapper {
+	position: relative;
+	display: inline-block;
+}
+
+.export-menu {
+	display: none;
+	position: absolute;
+	right: 0;
+	top: 100%;
+	background: #fff;
+	border: 1px solid #ddd;
+	min-width: 140px;
+	box-shadow: 0 4px 10px rgba(0, 0, 0, .1);
+	z-index: 999;
+}
+
+.export-menu button {
+	width: 100%;
+	padding: 8px 12px;
+	border: none;
+	background: none;
+	text-align: left;
+	cursor: pointer;
+}
+
+.export-menu button:hover {
+	background: #f5f5f5;
+}
+
+.export-menu.show {
+	display: block;
+}
+
+/* Dark mode specific adjustments */
+body.dark-mode .filter-select,
+body.dark-mode .search-box,
+body.dark-mode .form-control,
+body.dark-mode .committee-card,
+body.dark-mode .member-avatar {
+	background: var(--light-bg);
+	color: var(--text-dark);
+}
+
+body.dark-mode .btn-outline {
+	color: var(--text-dark);
+	border-color: var(--border);
+}
+
+body.dark-mode .btn-outline:hover {
+	background: var(--light-bg);
+}
+
+/* Print overrides for member table */
+@media print {
+
+	#membersTable,
+	#membersTable * {
+		visibility: visible;
+	}
+
+	#membersTable {
+		position: absolute;
+		left: 0;
+		top: 0;
+		width: 100%;
+		font-size: 11px;
+		border-collapse: collapse;
+	}
+
+	th,
+	td {
+		border: 1px solid #000;
+		padding: 3px 5px;
+		line-height: 1.2;
+	}
+
+	th {
+		background: #f2f2f2;
+		font-weight: bold;
+	}
+}

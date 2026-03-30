@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+	<title>SocietyHub · Register Your Society</title>
+	<link rel="icon" href="<?= base_url('assets/img/Gemini_Generated_Image_vudhc1vudhc1vudh.png') ?>" type="image/png">
+
+	<!-- Icons & Fonts -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+		rel="stylesheet" />
+
+	<!-- Leaflet CSS -->
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+			font-family: 'Inter', sans-serif;
+		}
+
+		:root {
+			--primary: #3498db;
+			--primary-dark: #2980b9;
+			--secondary: #2c3e50;
+			--success: #27ae60;
+			--warning: #f39c12;
+			--danger: #e74c3c;
+			--light-bg: #f8f9fa;
+			--border: #e1e8ed;
+			--text-dark: #2c3e50;
+			--text-light: #7f8c8d;
+			--shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+			--shadow-lg: 0 4px 20px rgba(0, 0, 0, 0.12);
+			--card-bg: #ffffff;
+		}
+
+		body {
+			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+			min-height: 100vh;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 20px;
+		}
+
+		.register-container {
+			max-width: 1100px;
+			width: 100%;
+			margin: 0 auto;
+		}
+
+		.register-card {
+			background: var(--card-bg);
+			border-radius: 30px;
+			padding: 40px;
+			box-shadow: var(--shadow-lg);
+		}
+
+		.register-header {
+			text-align: center;
+			margin-bottom: 30px;
+		}
+
+		.register-header h1 {
+			font-size: 2.2rem;
+			font-weight: 800;
+			color: var(--text-dark);
+			margin-bottom: 10px;
+		}
+
+		.register-header p {
+			color: var(--text-light);
+			font-size: 1rem;
+		}
+
+		.plan-summary {
+			background: var(--light-bg);
+			border-radius: 15px;
+			padding: 20px;
+			margin-bottom: 30px;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			border: 1px solid var(--border);
+		}
+
+		.plan-info h3 {
+			font-size: 1.2rem;
+			color: var(--text-dark);
+			margin-bottom: 5px;
+		}
+
+		.plan-info p {
+			color: var(--text-light);
+			font-size: 0.9rem;
+		}
+
+		.plan-price-display {
+			font-size: 1.8rem;
+			font-weight: 800;
+			color: var(--primary);
+		}
+
+		.grid {
+			display: grid;
+			grid-template-columns: 360px 1fr;
+			gap: 24px;
+		}
+
+		.form-group {
+			margin-bottom: 20px;
+		}
+
+		label {
+			display: block;
+			margin-bottom: 8px;
+			font-weight: 600;
+			color: var(--text-dark);
+			font-size: 0.9rem;
+		}
+
+		input,
+		select,
+		textarea {
+			width: 100%;
+			padding: 12px 15px;
+			border: 2px solid var(--border);
+			border-radius: 12px;
+			font-size: 1rem;
+			transition: all 0.3s;
+			background: var(--card-bg);
+			color: var(--text-dark);
+		}
+
+		input:focus,
+		select:focus,
+		textarea:focus {
+			outline: none;
+			border-color: var(--primary);
+			box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+		}
+
+		.btn {
+			background: var(--primary);
+			color: #fff;
+			padding: 12px 20px;
+			border: none;
+			border-radius: 50px;
+			font-weight: 600;
+			cursor: pointer;
+			width: 100%;
+			transition: all 0.3s;
+			margin-top: 5px;
+		}
+
+		.btn:hover {
+			background: var(--primary-dark);
+			transform: translateY(-2px);
+			box-shadow: 0 10px 20px rgba(52, 152, 219, 0.3);
+		}
+
+		.btn-icon {
+			width: auto;
+			padding: 12px 15px;
+			margin-top: 0;
+			border-radius: 12px;
+		}
+
+		.btn-register {
+			background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+			color: white;
+			padding: 15px 30px;
+			border: none;
+			border-radius: 50px;
+			font-weight: 600;
+			font-size: 1.1rem;
+			cursor: pointer;
+			width: 100%;
+			transition: all 0.3s;
+			margin-top: 20px;
+		}
+
+		.btn-register:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 10px 20px rgba(52, 152, 219, 0.3);
+		}
+
+		#map {
+			height: 340px;
+			border-radius: 16px;
+			border: 2px solid var(--border);
+			margin-bottom: 12px;
+		}
+
+		#posInfo {
+			font-size: 0.9rem;
+			color: var(--text-light);
+			text-align: center;
+			padding: 8px;
+			background: var(--light-bg);
+			border-radius: 30px;
+		}
+
+		.suggestions {
+			position: absolute;
+			background: #fff;
+			border: 1px solid #ccc;
+			width: 100%;
+			z-index: 1000;
+			max-height: 200px;
+			overflow-y: auto;
+			border-radius: 8px;
+			box-shadow: var(--shadow);
+		}
+
+		.suggestion {
+			padding: 10px;
+			cursor: pointer;
+			border-bottom: 1px solid #f0f0f0;
+		}
+
+		.suggestion:hover {
+			background: #f0f0f0;
+		}
+
+		.flex-row {
+			display: flex;
+			gap: 8px;
+			align-items: center;
+		}
+
+		.flex-row input {
+			flex: 1;
+		}
+
+		@media (max-width: 880px) {
+			.grid {
+				grid-template-columns: 1fr;
+			}
+		}
+	</style>
+</head>
+
+<body>
+	<?php
+	// (Plan variables are commented out as in original)
+	?>
+
+	<div class="register-container">
+		<div class="register-card">
+			<div class="register-header">
+				<h1>Register Your Society</h1>
+				<p>Provide society details. After saving you'll be redirected to create the admin.</p>
+			</div>
+
+			<!-- Two‑column layout: form left, map right -->
+			<div class="grid">
+				<!-- LEFT COLUMN: FORM FIELDS -->
+				<div>
+					<form method="post" action="<?= site_url('society/register') ?>" id="registerForm">
+						<!-- Society name with locate button -->
+						<div class="form-group">
+							<label for="societyName">Society Name *</label>
+							<div class="flex-row">
+								<input type="text" id="societyName" name="societyName" required
+									placeholder="e.g., Sunshine Apartments">
+								<button type="button" id="locateSocietyBtn" class="btn btn-icon"
+									title="Search this name on map">
+									<i class="fas fa-search-location"></i>
+								</button>
+							</div>
+						</div>
+
+						<!-- Society type -->
+						<div class="form-group">
+							<label for="societyType">Society Type *</label>
+							<select id="societyType" name="societyType" required>
+								<option value="">Select type</option>
+								<option value="apartment">Apartment</option>
+								<option value="flat">Flat</option>
+								<option value="housing">Housing Society</option>
+								<option value="township">Township</option>
+								<option value="other">Other</option>
+							</select>
+						</div>
+
+						<!-- Total flats -->
+						<div class="form-group">
+							<label for="totalFlats">Total Flats/Units *</label>
+							<input type="number" id="totalFlats" name="totalFlats" required min="1"
+								placeholder="e.g., 100">
+						</div>
+
+						<!-- Address fields (with location search) -->
+						<div class="form-group" style="position:relative">
+							<label for="placeSearch">Search Area (type society name or address)</label>
+							<input type="search" id="placeSearch" placeholder="Start typing an address..."
+								autocomplete="off">
+							<div id="suggestions" class="suggestions" style="display:none"></div>
+						</div>
+
+						<div class="form-group">
+							<label for="address">Address *</label>
+							<input type="text" id="address" name="address" required placeholder="Street address">
+						</div>
+
+						<div class="form-group">
+							<label for="city">City *</label>
+							<input type="text" id="city" name="city" required placeholder="Mumbai">
+						</div>
+
+						<div class="form-group">
+							<label for="state">State *</label>
+							<input type="text" id="state" name="state" required placeholder="Maharashtra">
+						</div>
+
+						<div class="form-group">
+							<label for="pincode">Pincode *</label>
+							<input type="text" id="pincode" name="pincode" required pattern="[0-9]{6}"
+								placeholder="400001">
+						</div>
+
+						<!-- Hidden lat/lng -->
+						<input type="hidden" name="lat" id="lat">
+						<input type="hidden" name="lng" id="lng">
+
+						<!-- Use my location button -->
+						<button type="button" class="btn" id="locateBtn">
+							<i class="fas fa-location-dot"></i> Use My Location
+						</button>
+
+						<!-- CSRF (if enabled) will be added automatically by form_open -->
+						<button type="submit" class="btn-register">Continue to Admin Registration</button>
+					</form>
+				</div>
+
+				<!-- RIGHT COLUMN: MAP AND LOCATION INFO -->
+				<div>
+					<div id="map"></div>
+					<div id="posInfo">📍 No location selected — click on map or use "Use My Location"</div>
+				</div>
+			</div>
+
+			<div class="login-link">
+				Already registered? <a href="<?= base_url('login') ?>">Login</a>
+			</div>
+		</div>
+	</div>
+
+	<!-- Leaflet JS -->
+	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+	<script>
+		// Initialize map
+		const map = L.map('map').setView([19.0760, 72.8777], 13); // Default: Mumbai
+
+		L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+			attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+		}).addTo(map);
+
+		let marker = null;
+
+		// Function to update marker and hidden fields
+		function setMarker(lat, lng) {
+			if (marker) marker.remove();
+			marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+			map.setView([lat, lng], 16);
+
+			document.getElementById('lat').value = lat;
+			document.getElementById('lng').value = lng;
+			document.getElementById('posInfo').innerHTML =
+				`📍 Selected: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+
+			// Reverse geocode to fill address fields
+			fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`)
+				.then(response => response.json())
+				.then(data => {
+					if (data.address) {
+						const addr = data.address;
+						document.getElementById('address').value = addr.road ? addr.road + (addr.house_number ? ' ' + addr.house_number : '') : '';
+						document.getElementById('city').value = addr.city || addr.town || addr.village || '';
+						document.getElementById('state').value = addr.state || '';
+						document.getElementById('pincode').value = addr.postcode || '';
+					}
+				})
+				.catch(err => console.log('Reverse geocoding failed', err));
+		}
+
+		// Click on map to set marker
+		map.on('click', (e) => setMarker(e.latlng.lat, e.latlng.lng));
+
+		// Use current location
+		document.getElementById('locateBtn').addEventListener('click', () => {
+			navigator.geolocation.getCurrentPosition(
+				(pos) => setMarker(pos.coords.latitude, pos.coords.longitude),
+				() => alert('Location permission denied or not available.')
+			);
+		});
+
+		// ---------- Place search with Nominatim ----------
+		const searchInput = document.getElementById('placeSearch');
+		const suggestionsDiv = document.getElementById('suggestions');
+		let timeoutId;
+
+		searchInput.addEventListener('input', function () {
+			const query = this.value.trim();
+			if (query.length < 3) {
+				suggestionsDiv.style.display = 'none';
+				return;
+			}
+
+			clearTimeout(timeoutId);
+			timeoutId = setTimeout(() => {
+				fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`)
+					.then(res => res.json())
+					.then(data => {
+						suggestionsDiv.innerHTML = '';
+						if (data.length === 0) {
+							suggestionsDiv.style.display = 'none';
+							return;
+						}
+						data.forEach(place => {
+							const div = document.createElement('div');
+							div.className = 'suggestion';
+							div.textContent = place.display_name;
+							div.addEventListener('click', () => {
+								searchInput.value = place.display_name;
+								setMarker(parseFloat(place.lat), parseFloat(place.lon));
+								suggestionsDiv.style.display = 'none';
+							});
+							suggestionsDiv.appendChild(div);
+						});
+						suggestionsDiv.style.display = 'block';
+					})
+					.catch(err => console.log('Search error', err));
+			}, 300);
+		});
+
+		// Hide suggestions when clicking outside
+		document.addEventListener('click', (e) => {
+			if (!searchInput.contains(e.target) && !suggestionsDiv.contains(e.target)) {
+				suggestionsDiv.style.display = 'none';
+			}
+		});
+
+		// New: Locate society button - copies society name to search field and triggers search
+		document.getElementById('locateSocietyBtn').addEventListener('click', function () {
+			const societyName = document.getElementById('societyName').value.trim();
+			if (societyName.length < 3) {
+				alert('Please enter at least 3 characters in the Society Name field to search.');
+				return;
+			}
+			// Set the search input value and trigger input event
+			searchInput.value = societyName;
+			searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+			// Focus on search input so user can see suggestions
+			searchInput.focus();
+		});
+
+		// Prevent form submission if location not selected
+		document.getElementById('registerForm').addEventListener('submit', function (e) {
+			if (!document.getElementById('lat').value || !document.getElementById('lng').value) {
+				e.preventDefault();
+				alert('Please select a location on the map or use "Use My Location".');
+			}
+		});
+	</script>
+</body>
+
+</html>

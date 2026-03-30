@@ -1,0 +1,215 @@
+/* ================ COMPLAINTS PAGE SPECIFIC STYLES ================ */
+/* Only styles unique to the complaints page – complements common.css */
+
+/* Button overrides (if needed – consider removing if using common styles) */
+.btn-outline {
+	background: transparent;
+	border: 1px solid #ccc;
+}
+
+.btn-primary {
+	background: #3498db;
+	color: white;
+	border: none;
+}
+
+.form-control {
+	font-family: inherit;
+}
+
+/* Priority badge color variants (base in common.css) */
+.priority-badge.low {
+	background: #2ecc71;
+}
+
+.priority-badge.medium {
+	background: #f39c12;
+}
+
+.priority-badge.high {
+	background: #e67e22;
+}
+
+.priority-badge.urgent {
+	background: #e74c3c;
+}
+
+/* Status badge color variants (base in common.css) */
+.status-badge.open {
+	background: #3498db;
+}
+
+.status-badge.in-progress {
+	background: #f39c12;
+}
+
+.status-badge.resolved {
+	background: #2ecc71;
+}
+
+.status-badge.closed {
+	background: #95a5a6;
+}
+
+/* Additional status/priority styles (with opacity variants) */
+.status-badge.open {
+	background: rgba(52, 152, 219, 0.1);
+	color: var(--primary);
+}
+
+.status-badge.in-progress {
+	background: rgba(243, 156, 18, 0.1);
+	color: var(--warning);
+}
+
+.status-badge.resolved {
+	background: rgba(39, 174, 96, 0.1);
+	color: var(--success);
+}
+
+.status-badge.closed {
+	background: rgba(108, 117, 125, 0.1);
+	color: var(--text-light);
+}
+
+.priority-badge.low {
+	background: rgba(52, 152, 219, 0.1);
+	color: var(--primary);
+}
+
+.priority-badge.medium {
+	background: rgba(243, 156, 18, 0.1);
+	color: var(--warning);
+}
+
+.priority-badge.high {
+	background: rgba(231, 76, 60, 0.1);
+	color: var(--danger);
+}
+
+.priority-badge.urgent {
+	background: rgba(155, 89, 182, 0.1);
+	color: #9b59b6;
+}
+
+/* Category badge (unique to complaints) */
+.category-badge {
+	padding: 4px 8px;
+	border-radius: 20px;
+	font-size: 0.65rem;
+	font-weight: 600;
+	display: inline-block;
+	background: rgba(52, 152, 219, 0.1);
+	color: var(--primary);
+}
+
+@media (min-width: 768px) {
+	.category-badge {
+		padding: 4px 12px;
+		font-size: 0.7rem;
+	}
+}
+
+/* Member items – used in complaints page */
+.member-item {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	padding: 12px 0;
+	border-bottom: 1px solid var(--border);
+	gap: 8px;
+}
+
+@media (min-width: 500px) {
+	.member-item {
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+	}
+}
+
+.member-info {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	width: 100%;
+}
+
+@media (min-width: 500px) {
+	.member-info {
+		width: auto;
+	}
+}
+
+.member-avatar {
+	width: 40px;
+	height: 40px;
+	border-radius: 10px;
+	background: var(--light-bg);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: 600;
+	color: var(--text-dark);
+	flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+	.member-avatar {
+		width: 44px;
+		height: 44px;
+		border-radius: 12px;
+	}
+}
+
+.modal {
+	display: none;
+	position: fixed;
+	z-index: 1000;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	background-color: rgba(0, 0, 0, 0.5);
+	align-items: center;
+	justify-content: center;
+}
+
+.modal.active {
+	display: flex !important;
+}
+
+.modal-content {
+	background: #fff;
+	padding: 20px;
+	border-radius: 12px;
+	max-width: 600px;
+	width: 90%;
+	max-height: 90vh;
+	overflow-y: auto;
+	box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 20px;
+}
+
+.modal-close {
+	font-size: 24px;
+	cursor: pointer;
+}
+
+/* Action buttons wrapper (specific to complaints) */
+.action-buttons {
+	display: flex;
+	gap: 5px;
+}
+
+@media (min-width: 768px) {
+	.action-buttons {
+		gap: 8px;
+	}
+}
