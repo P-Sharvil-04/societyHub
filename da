@@ -1,0 +1,377 @@
+[33mcommit 65a5d49bd39a79c6cd4d88fbadabad910e78fca6[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author: sharvil <sharvil.tmbs25@gmail.com>
+Date:   Thu Apr 23 11:25:35 2026 +0530
+
+    test git
+
+ application/config/config.php                      |    2 [32m+[m[31m-[m
+ application/config/constants.php                   |   45 [32m+[m[31m-[m
+ application/config/menus.php                       |    6 [32m+[m
+ application/config/permissions.php                 |   19 [32m+[m[31m-[m
+ application/config/routes.php                      |   17 [32m+[m[31m-[m
+ application/controllers/Ai_insights.php            |  528 [32m++++[m
+ application/controllers/Cctv.php                   |  179 [32m++[m
+ application/controllers/Dashboard_controller.php   |   68 [32m+[m
+ application/controllers/Flat_unit.php              |  115 [32m+[m[31m-[m
+ application/controllers/Map.php                    |   10 [32m+[m
+ application/controllers/Reports.php                |  191 [32m++[m
+ application/controllers/Society_setup.php          |    2 [32m+[m[31m-[m
+ application/controllers/complaints_controller.php  |  243 [32m+[m[31m-[m
+ .../controllers/events_booking_controller.php      |  383 [32m++[m[31m-[m
+ application/controllers/feature_controller.php     |  139 [32m+[m[31m-[m
+ application/controllers/notice_controller.php      |  605 [32m+++[m[31m--[m
+ application/controllers/parking_controller.php     |   79 [32m+[m[31m-[m
+ application/controllers/payment_controllerr.php    |  351 [32m+[m[31m--[m
+ application/controllers/plan_controller.php        |  562 [32m++[m[31m--[m
+ application/controllers/settings_controller.php    |   60 [32m+[m[31m-[m
+ application/controllers/staff_controller.php       |  278 [32m+[m[31m-[m
+ application/controllers/usercontroller.php         |   67 [32m+[m[31m-[m
+ application/controllers/visitor_controller.php     |  530 [32m++[m[31m--[m
+ application/models/Ai_insights_model.php           |  588 [32m+++++[m
+ application/models/Cctv_model.php                  |   55 [32m+[m
+ application/models/Dashboard_model.php             |  285 [32m+++[m
+ application/models/Events_booking_model.php        |  386 [32m++[m[31m-[m
+ application/models/Flat_unit_model.php             |  119 [32m+[m[31m-[m
+ application/models/Parking_model.php               |   41 [32m+[m[31m-[m
+ application/models/Payment_model.php               |  586 [32m+++[m[31m--[m
+ application/models/Reports_model.php               |  568 [32m+++++[m
+ application/models/Settings_model.php              |   31 [32m+[m[31m-[m
+ application/models/complaints_model.php            |  100 [32m+[m[31m-[m
+ application/models/manage_member_model.php         |  151 [32m+[m[31m-[m
+ application/models/notice_model.php                |  210 [32m+[m[31m-[m
+ application/models/staff_model.php                 |  194 [32m+[m[31m-[m
+ application/models/visitor_model.php               |  130 [32m+[m[31m-[m
+ application/views/ai_insights_view.php             | 1705 [32m+++++++++++++[m
+ application/views/cctv_view.php                    |  619 [32m+++++[m
+ application/views/complaints_view.php              |  240 [32m+[m[31m-[m
+ application/views/dashboard_view.php               |  238 [32m+[m[31m-[m
+ application/views/events_booking_view.php          | 2692 [32m+++++++++++++[m[31m-------[m
+ application/views/flat_unit.php                    |  217 [32m+[m[31m-[m
+ application/views/header.php                       | 1257 [32m+++++++[m[31m--[m
+ application/views/login_view.php                   | 1164 [32m+++++[m[31m----[m
+ application/views/maintenance_pay_view.php         |  736 [32m++++++[m
+ application/views/manage_member_view.php           | 1805 [32m+++++++[m[31m------[m
+ application/views/map_view.php                     |   86 [32m+[m
+ application/views/notices_view.php                 |  655 [32m++[m[31m---[m
+ application/views/parking_view.php                 |  136 [32m+[m[31m-[m
+ application/views/payment_view.php                 | 1111 [32m++++[m[31m----[m
+ application/views/profile_view.php                 |  968 [32m+++[m[31m----[m
+ application/views/register-society_view.php        |  683 [32m+++[m[31m--[m
+ application/views/report_view.php                  | 1366 [32m+++++[m[31m-----[m
+ application/views/settings_view.php                | 1912 [32m++++++++++[m[31m----[m
+ application/views/sidebar.php                      |   28 [32m+[m[31m-[m
+ application/views/society_setup.php                | 1735 [32m+++++++++[m[31m----[m
+ application/views/staff_view.php                   |  373 [32m++[m[31m-[m
+ application/views/visitors_view.php                | 1167 [32m++++++[m[31m---[m
+ assets/sounds/notify.mp3                           |  Bin [31m0[m -> [32m95004[m bytes
+ tools/cctv_hls_runner.py                           |  138 [32m+[m
+ .../3b0fc1db80c23929ff897e0374d1d3a3.jpg           |  Bin [31m0[m -> [32m587053[m bytes
+ .../555a8c4241c2239758ccc47942ef30bd.jpg           |  Bin [31m0[m -> [32m587053[m bytes
+ .../6333897b00b2678f63c2fc5794c89c1f.jpg           |  Bin [31m0[m -> [32m1095907[m bytes
+ .../64b41592ae4bdff964f0b7534653d691.jpg           |  Bin [31m0[m -> [32m587053[m bytes
+ .../90ab97b8814f492fdb2befba6785e036.png           |  Bin [31m0[m -> [32m4116[m bytes
+ .../c30cfe306a700e0edde62de674d5e14e.jpg           |  Bin [31m0[m -> [32m587053[m bytes
+ .../f5470ee6bb019716cf5247c1c0f73222.jpg           |  Bin [31m0[m -> [32m1095907[m bytes
+ .../profile/3511c2cdde8367642d32e7f53bca7c17.png   |  Bin [31m0[m -> [32m31644[m bytes
+ .../profile/690d3315954ab6eac0ac52812a62e11b.jpg   |  Bin [31m0[m -> [32m5337[m bytes
+ .../profile/6e1d0cc4552876ac54e1846fe3a083d4.jpg   |  Bin [31m0[m -> [32m13987[m bytes
+ 71 files changed, 20453 insertions(+), 8501 deletions(-)
+
+[33mcommit d33419b94e2b4e493a1104695b668daac016d36b[m
+Author: Ajay Shahu <Ajay@TMBS.local>
+Date:   Mon Mar 30 11:57:25 2026 +0530
+
+    first commit
+
+ .editorconfig                                      |   15 [32m+[m
+ .gitignore                                         |   32 [32m+[m
+ .htaccess                                          |    4 [32m+[m
+ application/.htaccess                              |    6 [32m+[m
+ application/cache/index.html                       |   11 [32m+[m
+ application/config/autoload.php                    |  135 [32m+[m
+ application/config/config.php                      |  530 [32m++[m
+ application/config/constants.php                   |   85 [32m+[m
+ application/config/database.php                    |   96 [32m+[m
+ application/config/doctypes.php                    |   24 [32m+[m
+ application/config/email.php                       |   10 [32m+[m
+ application/config/foreign_chars.php               |  114 [32m+[m
+ application/config/google_vision.json              |   13 [32m+[m
+ application/config/hooks.php                       |   13 [32m+[m
+ application/config/index.html                      |   11 [32m+[m
+ application/config/memcached.php                   |   19 [32m+[m
+ application/config/menus.php                       |  100 [32m+[m
+ application/config/migration.php                   |   84 [32m+[m
+ application/config/mimes.php                       |  186 [32m+[m
+ application/config/permissions.php                 |  101 [32m+[m
+ application/config/profiler.php                    |   14 [32m+[m
+ application/config/razorpay.php                    |    6 [32m+[m
+ application/config/role_priority.php               |   14 [32m+[m
+ application/config/routes.php                      |  131 [32m+[m
+ application/config/smileys.php                     |   64 [32m+[m
+ application/config/society.php                     |    0
+ application/config/user_agents.php                 |  222 [32m+[m
+ application/config/xml/amenities.xml               |   30 [32m+[m
+ application/controllers/Expense.php                |   83 [32m+[m
+ application/controllers/Flat_unit.php              |  316 [32m+[m
+ application/controllers/Payment_controller.php     |  177 [32m+[m
+ application/controllers/Profile.php                |  123 [32m+[m
+ application/controllers/Razorpay.php               |   32 [32m+[m
+ application/controllers/Society_setup.php          |  180 [32m+[m
+ application/controllers/TestVision.php             |   17 [32m+[m
+ application/controllers/Welcome.php                |   25 [32m+[m
+ application/controllers/aminity_controller.php     |  142 [32m+[m
+ application/controllers/apicontroller.php          |   21 [32m+[m
+ application/controllers/complaints_controller.php  |  199 [32m+[m
+ application/controllers/document_controller.php    |  137 [32m+[m
+ .../controllers/events_booking_controller.php      |  465 [32m++[m
+ application/controllers/feature_controller.php     |  749 [32m++[m
+ application/controllers/index.html                 |   11 [32m+[m
+ application/controllers/members_controller.php     |  259 [32m+[m
+ application/controllers/notice_controller.php      |  231 [32m+[m
+ application/controllers/parking_controller.php     |  170 [32m+[m
+ application/controllers/payment_controllerr.php    |  201 [32m+[m
+ application/controllers/plan_controller.php        |  279 [32m+[m
+ application/controllers/settings_controller.php    |  272 [32m+[m
+ application/controllers/staff_controller.php       |  255 [32m+[m
+ application/controllers/usercontroller.php         |  371 [32m+[m
+ application/controllers/visitor_controller.php     |  215 [32m+[m
+ application/core/MY_Controller.php                 |   42 [32m+[m
+ application/core/index.html                        |   11 [32m+[m
+ application/helpers/index.html                     |   11 [32m+[m
+ application/helpers/permission_helper.php          |   20 [32m+[m
+ application/hooks/index.html                       |   11 [32m+[m
+ application/index.html                             |   11 [32m+[m
+ application/language/english/index.html            |   11 [32m+[m
+ application/language/index.html                    |   11 [32m+[m
+ application/libraries/index.html                   |   11 [32m+[m
+ application/logs/index.html                        |   11 [32m+[m
+ application/models/Events_booking_model.php        |  268 [32m+[m
+ application/models/Expense_model.php               |    9 [32m+[m
+ application/models/Flat_unit_model.php             |  306 [32m+[m
+ application/models/Parking_model.php               |  126 [32m+[m
+ application/models/Payment_model.php               |  342 [32m+[m
+ application/models/Payment_models.php              |   52 [32m+[m
+ application/models/Profile_model.php               |   16 [32m+[m
+ application/models/Razorpay_model.php              |   44 [32m+[m
+ application/models/Settings_model.php              |  174 [32m+[m
+ application/models/Society_setup_model.php         |  271 [32m+[m
+ application/models/amenity_model.php               |  184 [32m+[m
+ application/models/complaints_model.php            |  247 [32m+[m
+ application/models/document_model.php              |   51 [32m+[m
+ application/models/index.html                      |   11 [32m+[m
+ application/models/manage_member_model.php         |  380 [32m+[m
+ application/models/membermodel.php                 |    0
+ application/models/members_model.php               |  210 [32m+[m
+ application/models/notice_model.php                |  184 [32m+[m
+ application/models/plan_model.php                  |   69 [32m+[m
+ application/models/staff_model.php                 |  232 [32m+[m
+ application/models/usermodel.php                   |   75 [32m+[m
+ application/models/visitor_model.php               |  166 [32m+[m
+ application/third_party/index.html                 |   11 [32m+[m
+ application/views/add_expense_view.php             |  116 [32m+[m
+ application/views/add_member_view.php              |    0
+ application/views/admin_register_view.php          |  917 [32m+++[m
+ application/views/aminities_view.php               |  700 [32m++[m
+ application/views/bank_view.php                    |   18 [32m+[m
+ application/views/chairman_dashboard.php           |   63 [32m+[m
+ application/views/complaints_view.php              |  540 [32m++[m
+ application/views/dashboard_view.php               |  289 [32m+[m
+ application/views/documents_view.php               |  347 [32m+[m
+ application/views/errors/aminities.txt             | 1203 [32m+++[m
+ application/views/errors/cli/error_404.php         |    8 [32m+[m
+ application/views/errors/cli/error_db.php          |    8 [32m+[m
+ application/views/errors/cli/error_exception.php   |   21 [32m+[m
+ application/views/errors/cli/error_general.php     |    8 [32m+[m
+ application/views/errors/cli/error_php.php         |   21 [32m+[m
+ application/views/errors/cli/index.html            |   11 [32m+[m
+ application/views/errors/html/error_404.php        |   64 [32m+[m
+ application/views/errors/html/error_db.php         |   64 [32m+[m
+ application/views/errors/html/error_exception.php  |   32 [32m+[m
+ application/views/errors/html/error_general.php    |   64 [32m+[m
+ application/views/errors/html/error_php.php        |   33 [32m+[m
+ application/views/errors/html/index.html           |   11 [32m+[m
+ application/views/errors/index.html                |   11 [32m+[m
+ application/views/errors/sidebar.html              |  797 [32m++[m
+ application/views/events_booking_view.php          |  947 [32m+++[m
+ application/views/flat_unit.php                    |  855 [32m+++[m
+ application/views/geolocation                      |  475 [32m++[m
+ application/views/header.php                       |  550 [32m++[m
+ application/views/index.html                       |   11 [32m+[m
+ application/views/login_view.php                   |  560 [32m++[m
+ application/views/manage_member_view.php           |  812 [32m++[m
+ application/views/notices_view.php                 |  810 [32m++[m
+ application/views/parking_view.php                 |  682 [32m++[m
+ application/views/pay_view.php                     |   56 [32m+[m
+ application/views/payment_view.php                 |  948 [32m+++[m
+ application/views/payment_views.php                |   47 [32m+[m
+ application/views/plan_view.php                    |  265 [32m+[m
+ application/views/profile_view.php                 |  576 [32m++[m
+ application/views/register-society_view.php        | 1066 [32m+++[m
+ application/views/register_view.php                |  122 [32m+[m
+ application/views/report_view.php                  |  612 [32m++[m
+ application/views/residents_view.php               |  297 [32m+[m
+ application/views/settings_view.php                |  573 [32m++[m
+ application/views/sidebar.php                      |  703 [32m++[m
+ application/views/sidebar2.php                     |  929 [32m+++[m
+ application/views/society_setup.php                |  557 [32m++[m
+ application/views/staff_view.php                   |  694 [32m++[m
+ application/views/visitors_view.php                |  676 [32m++[m
+ application/views/welcome_message.php              |  100 [32m+[m
+ assets/css/aminities.css                           | 1374 [32m++++[m
+ assets/css/common.css                              | 1540 [32m++++[m
+ assets/css/complaints.css                          |  215 [32m+[m
+ assets/css/dashboard.css                           |  322 [32m+[m
+ assets/css/flat_unit.css                           | 1112 [32m+++[m
+ assets/css/login.css                               |    0
+ assets/css/manage_member.css                       |  491 [32m++[m
+ assets/css/notices.css                             |  204 [32m+[m
+ assets/css/payment.css                             |    0
+ assets/css/plan.css                                |  378 [32m+[m
+ assets/css/register.css                            |   99 [32m+[m
+ assets/css/reports.css                             |  755 [32m++[m
+ assets/css/residents.css                           | 1282 [32m++++[m
+ assets/css/staff.css                               |    0
+ assets/css/style.css                               |  359 [32m+[m
+ assets/css/visitors.css                            |  189 [32m+[m
+ assets/img/1000170405.png                          |  Bin [31m0[m -> [32m1301117[m bytes
+ .../ChatGPT Image Mar 27, 2026, 04_19_01 PM.png    |  Bin [31m0[m -> [32m80287[m bytes
+ .../ChatGPT Image Mar 27, 2026, 04_22_02 PM.png    |  Bin [31m0[m -> [32m2479173[m bytes
+ assets/img/GG-Gate-1210x617.jpg                    |  Bin [31m0[m -> [32m124326[m bytes
+ .../Gemini_Generated_Image_3oky7t3oky7t3oky.png    |  Bin [31m0[m -> [32m1546006[m bytes
+ .../Gemini_Generated_Image_42n4z442n4z442n4.png    |  Bin [31m0[m -> [32m1303403[m bytes
+ .../Gemini_Generated_Image_vudhc1vudhc1vudh.png    |  Bin [31m0[m -> [32m1094638[m bytes
+ assets/img/image (28).png                          |  Bin [31m0[m -> [32m2462606[m bytes
+ assets/js/main.js                                  |   60 [32m+[m
+ assets/sample/member_sample.csv                    |    2 [32m+[m
+ composer.json                                      |   26 [32m+[m
+ create_contact()                                   |    0
+ includes/header.php                                |   24 [32m+[m
+ includes/sidebar.php                               |  495 [32m++[m
+ index.php                                          |  290 [32m+[m
+ license.txt                                        |   21 [32m+[m
+ model(Razorpay_model)                              |    0
+ readme.rst                                         |   71 [32m+[m
+ stdout.txt                                         |   47 [32m+[m
+ system/.htaccess                                   |    6 [32m+[m
+ system/core/Benchmark.php                          |  134 [32m+[m
+ system/core/CodeIgniter.php                        |  560 [32m++[m
+ system/core/Common.php                             |  849 [32m+++[m
+ system/core/Config.php                             |  380 [32m+[m
+ system/core/Controller.php                         |  105 [32m+[m
+ system/core/Exceptions.php                         |  275 [32m+[m
+ system/core/Hooks.php                              |  267 [32m+[m
+ system/core/Input.php                              |  937 [32m+++[m
+ system/core/Lang.php                               |  204 [32m+[m
+ system/core/Loader.php                             | 1417 [32m++++[m
+ system/core/Log.php                                |  297 [32m+[m
+ system/core/Model.php                              |   77 [32m+[m
+ system/core/Output.php                             |  847 [32m+++[m
+ system/core/Router.php                             |  517 [32m++[m
+ system/core/Security.php                           | 1111 [32m+++[m
+ system/core/URI.php                                |  646 [32m++[m
+ system/core/Utf8.php                               |  165 [32m+[m
+ system/core/compat/hash.php                        |  255 [32m+[m
+ system/core/compat/index.html                      |   11 [32m+[m
+ system/core/compat/mbstring.php                    |  150 [32m+[m
+ system/core/compat/password.php                    |  252 [32m+[m
+ system/core/compat/standard.php                    |  183 [32m+[m
+ system/core/index.html                             |   11 [32m+[m
+ system/database/DB.php                             |  219 [32m+[m
+ system/database/DB_cache.php                       |  222 [32m+[m
+ system/database/DB_driver.php                      | 1866 [32m+++++[m
+ system/database/DB_forge.php                       | 1034 [32m+++[m
+ system/database/DB_query_builder.php               | 2809 [32m+++++++[m
+ system/database/DB_result.php                      |  666 [32m++[m
+ system/database/DB_utility.php                     |  425 [32m++[m
+ system/database/drivers/cubrid/cubrid_driver.php   |  406 [32m+[m
+ system/database/drivers/cubrid/cubrid_forge.php    |  231 [32m+[m
+ system/database/drivers/cubrid/cubrid_result.php   |  178 [32m+[m
+ system/database/drivers/cubrid/cubrid_utility.php  |   80 [32m+[m
+ system/database/drivers/cubrid/index.html          |   11 [32m+[m
+ system/database/drivers/ibase/ibase_driver.php     |  414 [32m+[m
+ system/database/drivers/ibase/ibase_forge.php      |  252 [32m+[m
+ system/database/drivers/ibase/ibase_result.php     |  162 [32m+[m
+ system/database/drivers/ibase/ibase_utility.php    |   70 [32m+[m
+ system/database/drivers/ibase/index.html           |   11 [32m+[m
+ system/database/drivers/index.html                 |   11 [32m+[m
+ system/database/drivers/mssql/index.html           |   11 [32m+[m
+ system/database/drivers/mssql/mssql_driver.php     |  519 [32m++[m
+ system/database/drivers/mssql/mssql_forge.php      |  152 [32m+[m
+ system/database/drivers/mssql/mssql_result.php     |  199 [32m+[m
+ system/database/drivers/mssql/mssql_utility.php    |   78 [32m+[m
+ system/database/drivers/mysql/index.html           |   11 [32m+[m
+ system/database/drivers/mysql/mysql_driver.php     |  495 [32m++[m
+ system/database/drivers/mysql/mysql_forge.php      |  243 [32m+[m
+ system/database/drivers/mysql/mysql_result.php     |  200 [32m+[m
+ system/database/drivers/mysql/mysql_utility.php    |  212 [32m+[m
+ system/database/drivers/mysqli/index.html          |   11 [32m+[m
+ system/database/drivers/mysqli/mysqli_driver.php   |  554 [32m++[m
+ system/database/drivers/mysqli/mysqli_forge.php    |  245 [32m+[m
+ system/database/drivers/mysqli/mysqli_result.php   |  233 [32m+[m
+ system/database/drivers/mysqli/mysqli_utility.php  |  212 [32m+[m
+ system/database/drivers/oci8/index.html            |   11 [32m+[m
+ system/database/drivers/oci8/oci8_driver.php       |  712 [32m++[m
+ system/database/drivers/oci8/oci8_forge.php        |  217 [32m+[m
+ system/database/drivers/oci8/oci8_result.php       |  230 [32m+[m
+ system/database/drivers/oci8/oci8_utility.php      |   69 [32m+[m
+ system/database/drivers/odbc/index.html            |   11 [32m+[m
+ system/database/drivers/odbc/odbc_driver.php       |  426 [32m++[m
+ system/database/drivers/odbc/odbc_forge.php        |   87 [32m+[m
+ system/database/drivers/odbc/odbc_result.php       |  269 [32m+[m
+ system/database/drivers/odbc/odbc_utility.php      |   64 [32m+[m
+ system/database/drivers/pdo/index.html             |   11 [32m+[m
+ system/database/drivers/pdo/pdo_driver.php         |  351 [32m+[m
+ system/database/drivers/pdo/pdo_forge.php          |   66 [32m+[m
+ system/database/drivers/pdo/pdo_result.php         |  199 [32m+[m
+ system/database/drivers/pdo/pdo_utility.php        |   64 [32m+[m
+ system/database/drivers/pdo/subdrivers/index.html  |   11 [32m+[m
+ .../drivers/pdo/subdrivers/pdo_4d_driver.php       |  201 [32m+[m
+ .../drivers/pdo/subdrivers/pdo_4d_forge.php        |  218 [32m+[m
+ .../drivers/pdo/subdrivers/pdo_cubrid_driver.php   |  210 [32m+[m
+ .../drivers/pdo/subdrivers/pdo_cubrid_forge.php    |  231 [32m+[m
+ .../drivers/pdo/subdrivers/pdo_dblib_driver.php    |  354 [32m+[m
+ .../drivers/pdo/subdrivers/pdo_dblib_forge.php     |  150 [32m+[m
+ .../drivers/pdo/subdrivers/pdo_firebird_driver.php |  280 [32m+[m
+ .../drivers/pdo/subdrivers/pdo_firebird_forge.php  |  238 [32m+[m
+ .../drivers/pdo/subdrivers/pdo_ibm_driver.php      |  245 [32m+[m
+ .../drivers/pdo/subdrivers/pdo_ibm_forge.php       |  155 [32m+[m
+ .../drivers/pdo/subdrivers/pdo_informix_driver.php |  310 [32m+[m
+ .../drivers/pdo/subdrivers/pdo_informix_forge.php  |  164 [32m+[m
+ .../drivers/pdo/subdrivers/pdo_mysql_driver.php    |  380 [32m+[m
+ .../drivers/pdo/subdrivers/pdo_mysql_forge.php     |  257 [32m+[m
+ .../drivers/pdo/subdrivers/pdo_oci_driver.php      |  327 [32m+[m
+ .../drivers/pdo/subdrivers/pdo_oci_forge.php       |  208 [32m+[m
+ .../drivers/pdo/subdrivers/pdo_odbc_driver.php     |  230 [32m+[m
+ .../drivers/pdo/subdrivers/pdo_odbc_forge.php      |   71 [32m+[m
+ .../drivers/pdo/subdrivers/pdo_pgsql_driver.php    |  385 [32m+[m
+ .../drivers/pdo/subdrivers/pdo_pgsql_forge.php     |  218 [32m+[m
+ .../drivers/pdo/subdrivers/pdo_sqlite_driver.php   |  214 [32m+[m
+ .../drivers/pdo/subdrivers/pdo_sqlite_forge.php    |  239 [32m+[m
+ .../drivers/pdo/subdrivers/pdo_sqlsrv_driver.php   |  370 [32m+[m
+ .../drivers/pdo/subdrivers/pdo_sqlsrv_forge.php    |  150 [32m+[m
+ system/database/drivers/postgre/index.html         |   11 [32m+[m
+ system/database/drivers/postgre/postgre_driver.php |  611 [32m++[m
+ system/database/drivers/postgre/postgre_forge.php  |  206 [32m+[m
+ system/database/drivers/postgre/postgre_result.php |  183 [32m+[m
+ .../database/drivers/postgre/postgre_utility.php   |   79 [32m+[m
+ system/database/drivers/sqlite/index.html          |   11 [32m+[m
+ system/database/drivers/sqlite/sqlite_driver.php   |  331 [32m+[m
+ system/database/drivers/sqlite/sqlite_forge.php    |  206 [32m+[m
+ system/database/drivers/sqlite/sqlite_result.php   |  165 [32m+[m
+ system/database/drivers/sqlite/sqlite_utility.php  |   62 [32m+[m
+ system/database/drivers/sqlite3/index.html         |   11 [32m+[m
+ system/database/drivers/sqlite3/sqlite3_driver.php |  345 [32m+[m
+ system/database/drivers/sqlite3/sqlite3_forge.php  |  226 [32m+[m
+ system/database/drivers/sqlite3/sqlite3_result.php |  195 [32m+[m
+ .../database/drivers/sqlite3/sqlite3_utility.php   |   62 [32m+[m
+ system/database/drivers/sqlsrv/index.html          |   11 [32m+[m
+ system/database/drivers/sqlsrv/sqlsrv_driver.php   |  544 [32m++[m
+ system/database/drivers/sqlsrv/sqlsrv_forge.php    |  150 [32m+[m
+ system/database/drivers/sqlsrv/sqlsrv_result.php   |  194 [32m+[m
+ system/database/drivers/sqlsrv/sqlsrv_utility.php  |   78 [32m+[m
+ system/database/index.html                         |   11 [32m+[m
+ system/fonts/index.html                            |   11 [32m+[m
+ system/fonts/texb.ttf                              |  Bin [31m0[m -> [32m143830[m bytes
+ system/helpers/array_helper.php                    |  116 [32m+[m
+ system/helpers/captcha_helper.php                  |  353 [32m+[m
+ system/helpers/cookie_hel

@@ -30,3 +30,20 @@ user_guide_src/cilexer/pycilexer.egg-info/*
 *.sublime-project
 /tests/tests/
 /tests/results/
+# System files
+.DS_Store
+Thumbs.db
+
+# CI3 config (sensitive)
+application/config/config.php
+application/config/database.php
+
+# Logs & cache
+application/logs/*
+application/cache/*
+
+# Uploads
+uploads/
+
+# Vendor (if using composer)
+vendor/
