@@ -627,7 +627,6 @@
 					<?php endif; ?>
 				</div>
 			</div>
-			<!-- AIzaSyBxxHr_7LLZsV3tpjRQR9SPh390eBpjWSI -->
 			<!-- MANAGEMENT Section (collapsible) -->
 			<div class="menu-section" id="section-management">
 				<div class="menu-section-header" onclick="toggleSection('management')">
@@ -894,7 +893,6 @@
 <?php endif; ?>
 </div>
 </div>
-<!-- AIzaSyBxxHr_7LLZsV3tpjRQR9SPh390eBpjWSI -->
 <!-- MANAGEMENT Section (collapsible) -->
 <div class="menu-section" id="section-management">
 	<div class="menu-section-header" onclick="toggleSection('management')">
