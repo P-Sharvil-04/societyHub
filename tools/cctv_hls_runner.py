@@ -113,26 +113,34 @@ if __name__ == "__main__":
         exit(1)
 
     cameras = get_active_cameras(conn)
-    processes = []
+    process_names = []
+    process_map = {}
 
     for cam in cameras:
         proc = start_camera_stream(cam)
         if proc:
-            processes.append((safe_name(cam['name']), proc))
+            cam_name = safe_name(cam['name'])
+            process_names.append(cam_name)
+            process_map[cam_name] = proc
 
     print("[LOOP] Running stream monitor...")
     try:
         while True:
-            for name, proc in processes:
+            for name in process_names:
+                proc = process_map.get(name)
+                if not proc:
+                    continue
                 retcode = proc.poll()
                 if retcode is not None:
                     print(f"[FAIL] {name} exited with code {retcode}, restarting...")
                     cam = next(c for c in cameras if safe_name(c['name']) == name)
                     new_proc = start_camera_stream(cam)
                     if new_proc:
-                        processes = [(n, p) if n != name else (name, new_proc) for n, p in processes]
+                        process_map[name] = new_proc
             time.sleep(5)
     except KeyboardInterrupt:
         print("[EXIT] Stopping all streams...")
-        for _, proc in processes:
-            proc.terminate()
+        for name in process_names:
+            proc = process_map.get(name)
+            if proc:
+                proc.terminate()
