@@ -1,10 +1,8 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-
-class parking_controller extends CI_Controller
+class Parking_controller extends CI_Controller
 {
-
 	public function __construct()
 	{
 		parent::__construct();
@@ -15,22 +13,17 @@ class parking_controller extends CI_Controller
 		if (!$this->session->userdata('logged_in')) {
 			redirect('login');
 		}
-
 	}
-
 
 	private function is_chairman()
 	{
 		return $this->session->userdata('role_name') === 'chairman';
 	}
 
-	// private function is_member()
-	// {
-	// 	return in_array(
-	// 		$this->session->userdata('member_type'),
-	// 		['owner', 'tenant']
-	// 	);
-	// }
+	private function is_super_admin()
+	{
+		return $this->session->userdata('role_name') === 'super_admin';
+	}
 
 	private function society_id()
 	{
@@ -54,19 +47,72 @@ class parking_controller extends CI_Controller
 		];
 
 		$data['title'] = 'Parking';
-		// $this->load->view('header', $data);
 		$this->load->view('parking_view', $data);
 	}
 
 	public function index()
 	{
-		if ($this->is_chairman()) {
+		if ($this->is_super_admin()) {
+			redirect('parking/super_admin_dashboard');
+		} elseif ($this->is_chairman()) {
 			redirect('parking/dashboard');
 		} else {
 			redirect('parking/my_parking');
 		}
 	}
 
+	public function super_admin_dashboard()
+	{
+		if (!$this->is_super_admin()) {
+			redirect('login');
+		}
+
+		$societies = $this->Parking_model->get_all_societies();
+		if (empty($societies)) {
+			show_error('No societies found');
+		}
+
+		// When form is submitted, save selected society in session and redirect
+		if ($this->input->post('society_id')) {
+			$posted_society_id = (int) $this->input->post('society_id', TRUE);
+			$this->session->set_userdata('parking_selected_society_id', $posted_society_id);
+			redirect('parking/super_admin_dashboard');
+		}
+
+		// Read selected society from session
+		$selected_society_id = (int) $this->session->userdata('parking_selected_society_id');
+
+		// Fallback to first society if nothing is selected or invalid
+		$selected_society = null;
+		foreach ($societies as $s) {
+			if ((int) $s->id === $selected_society_id) {
+				$selected_society = $s;
+				break;
+			}
+		}
+
+		if (!$selected_society) {
+			$selected_society = $societies[0];
+			$selected_society_id = (int) $selected_society->id;
+			$this->session->set_userdata('parking_selected_society_id', $selected_society_id);
+		}
+
+		$selected_society_name = $selected_society->name;
+
+		$parking_list = $this->Parking_model->get_all_parking($selected_society_id);
+		$stats = $this->Parking_model->get_stats($selected_society_id);
+		$members = $this->Parking_model->get_members($selected_society_id);
+
+		$this->render('super_admin', [
+			'societies' => $societies,
+			'selected_society_id' => $selected_society_id,
+			'selected_society_name' => $selected_society_name,
+			'parking_list' => $parking_list,
+			'stats' => $stats,
+			'members' => $members,
+			'flash' => [],
+		]);
+	}
 
 	public function dashboard()
 	{
@@ -106,7 +152,6 @@ class parking_controller extends CI_Controller
 		$society_id = $this->society_id();
 		$slot_number = strtoupper(trim($this->input->post('slot_number', TRUE)));
 
-		// Check slot not already used in this society
 		if ($this->Parking_model->slot_exists($slot_number, $society_id)) {
 			$this->session->set_flashdata('error', "Slot <strong>{$slot_number}</strong> is already assigned in your society.");
 			redirect('parking/dashboard');
@@ -114,7 +159,7 @@ class parking_controller extends CI_Controller
 
 		$ok = $this->Parking_model->assign([
 			'society_id' => $society_id,
-			'owner_id' => $this->input->post('owner_id'),
+			'owner_id' => (int) $this->input->post('owner_id'),
 			'slot_number' => $slot_number,
 			'vehicle_type' => $this->input->post('vehicle_type', TRUE),
 			'vehicle_number' => strtoupper(trim($this->input->post('vehicle_number', TRUE))),
@@ -146,10 +191,8 @@ class parking_controller extends CI_Controller
 		redirect('parking/dashboard');
 	}
 
-
 	public function my_parking()
 	{
-		// Chairman accidentally hits owner URL → send back
 		if ($this->is_chairman()) {
 			redirect('parking/dashboard');
 		}

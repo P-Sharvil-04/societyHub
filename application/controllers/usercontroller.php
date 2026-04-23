@@ -124,6 +124,7 @@ class Usercontroller extends CI_Controller
 				return;
 			}
 
+			// Fetch user + role via Usermodel (users JOIN user_roles JOIN roles)
 			$user = $this->Usermodel->get_user_by_email($email);
 
 			if (!$user) {
@@ -136,11 +137,18 @@ class Usercontroller extends CI_Controller
 				return;
 			}
 
-			// --- New: enforce society status / role login rules ---
-			// Super admin bypasses the checks and can always log in.
-			$userRole = !empty($user->role_name) ? $user->role_name : null;
+			$roleName = !empty($user->role_name) ? $user->role_name : null;
 
-			if ($userRole !== 'super_admin') {
+			// ── Roles that bypass the society-status check ──────────────
+			// super_admin has no society; staff/security belong to a society
+			// but should not be blocked by its status.
+			$bypass_society_check = in_array($roleName, [
+				'super_admin',
+				'security',
+				'staff',
+			]);
+
+			if (!$bypass_society_check) {
 
 				$societyStatus = null;
 
@@ -156,36 +164,33 @@ class Usercontroller extends CI_Controller
 					$societyStatus = $socRow->status ?? null;
 				}
 
-				//  BLOCK: Deactivated
 				if ($societyStatus === 'deactivated') {
 					echo json_encode([
 						'status' => false,
-						'msg' => 'The society is Deactivated. Contact Super Admin for activation.'
+						'msg' => 'The society is Deactivated. Contact Super Admin for activation.',
 					]);
 					return;
 				}
 
-				//  BLOCK: Pending
 				if ($societyStatus === 'pending') {
 					echo json_encode([
 						'status' => false,
-						'msg' => 'The society is under review. Please wait or contact admin.'
+						'msg' => 'The society is under review. Please wait or contact admin.',
 					]);
 					return;
 				}
 
-				//  BLOCK: Unknown / missing status
 				if ($societyStatus !== 'active') {
 					echo json_encode([
 						'status' => false,
-						'msg' => 'Invalid society status. Contact support.'
+						'msg' => 'Invalid society status. Contact support.',
 					]);
 					return;
 				}
 			}
-			// --- End new checks ---
 
-			$societyName = 'Your Society';        // fallback defaults
+			// ── Fetch society display info ───────────────────────────────
+			$societyName = 'Your Society';
 			$societyTagline = 'Residential Society';
 
 			if (!empty($user->society_id)) {
@@ -202,9 +207,10 @@ class Usercontroller extends CI_Controller
 					$societyTagline = $societyRow->society_tagline ?? $societyTagline;
 				}
 			}
-			$roleName = !empty($user->role_name) ? $user->role_name : null;
+
 			$memberType = !empty($user->member_type) ? $user->member_type : null;
 
+			// ── Set session ──────────────────────────────────────────────
 			$this->session->set_userdata([
 				'logged_in' => TRUE,
 				'user_id' => $user->id,
@@ -217,14 +223,15 @@ class Usercontroller extends CI_Controller
 				'user_email' => $user->email,
 			]);
 
+			// ── Role display label ───────────────────────────────────────
 			$roleLabels = [
 				'super_admin' => 'Super Admin',
 				'chairman' => 'Chairman',
 				'committee_member' => 'Committee Member',
 				'secretary' => 'Secretary',
 				'accountant' => 'Accountant',
-				'security' => 'Security',
-				'staff' => 'Staff',
+				'security' => 'Security',   // ← staff login
+				'staff' => 'Staff',       // ← staff login
 				'owner' => 'Owner',
 				'tenant' => 'Tenant',
 			];
@@ -236,11 +243,18 @@ class Usercontroller extends CI_Controller
 				"Welcome back, {$user->name}! Logged in as {$label}."
 			);
 
+			// ── Redirect ─────────────────────────────────────────────────
+			// All roles land on /dashboard.
+			// If you want staff/security on a dedicated page, change here:
+			//   'security' → base_url('security/dashboard')
+			//   'staff'    → base_url('staff/portal')
+			$redirect = base_url('dashboard');
+
 			echo json_encode([
 				'status' => true,
 				'msg' => "Login successful. Welcome, {$user->name}!",
 				'role' => $roleName,
-				'redirect' => base_url('dashboard'),
+				'redirect' => $redirect,
 			]);
 			return;
 		}
@@ -248,18 +262,18 @@ class Usercontroller extends CI_Controller
 		$this->load->view('login_view');
 	}
 	// ================= DASHBOARD =================
-	public function dashboard()
-	{
-		if (!$this->session->userdata('logged_in')) {
-			redirect('login');
-		}
-		// inside controller constructor or specific method
+	// public function dashboard()
+	// {
+	// 	if (!$this->session->userdata('logged_in')) {
+	// 		redirect('login');
+	// 	}
+	// 	// inside controller constructor or specific method
 
-		$data['title'] = "dashboard";
+	// 	$data['title'] = "dashboard";
 
-		$this->load->view('header', $data);
-		$this->load->view('dashboard_view');
-	}
+	// 	$this->load->view('header', $data);
+	// 	$this->load->view('dashboard_view');
+	// }
 
 	// ================= LOGOUT =================
 	public function logout()
@@ -275,6 +289,7 @@ class Usercontroller extends CI_Controller
 	// }
 
 	// =========== settings ==================
+
 	public function settings()
 	{
 		$data['title'] = 'settings';

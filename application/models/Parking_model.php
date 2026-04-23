@@ -1,10 +1,6 @@
-<?php defined('BASEPATH') OR exit('No direct script access allowed');
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
 
-/**
- * Parking_model
- * Fixed version — adds wing name to all queries so the parking view
- * can display "[Wing A] Flat A-101" instead of just the flat number.
- */
 class Parking_model extends CI_Model
 {
 	public function __construct()
@@ -13,9 +9,6 @@ class Parking_model extends CI_Model
 		$this->load->database();
 	}
 
-	/* ──────────────────────────────────────────────
-	 |  GET ALL PARKING RECORDS FOR A SOCIETY
-	────────────────────────────────────────────── */
 	public function get_all_parking(int $society_id): array
 	{
 		$this->db->select('
@@ -30,16 +23,13 @@ class Parking_model extends CI_Model
         ');
 		$this->db->from('parking p');
 		$this->db->join('users u', 'u.id = p.owner_id', 'left');
-		$this->db->join('wings w', 'w.id = u.wing_id', 'left');  /* ← wing from user */
+		$this->db->join('wings w', 'w.id = u.wing_id', 'left');
 		$this->db->join('users a', 'a.id = p.allocated_by', 'left');
 		$this->db->where('p.society_id', $society_id);
 		$this->db->order_by('p.allocated_at', 'DESC');
 		return $this->db->get()->result();
 	}
 
-	/* ──────────────────────────────────────────────
-	 |  GET PARKING FOR ONE OWNER
-	────────────────────────────────────────────── */
 	public function get_owner_parking(int $owner_id, int $society_id): array
 	{
 		$this->db->select('
@@ -58,9 +48,6 @@ class Parking_model extends CI_Model
 		return $this->db->get()->result();
 	}
 
-	/* ──────────────────────────────────────────────
-	 |  CHECK IF SLOT ALREADY EXISTS
-	────────────────────────────────────────────── */
 	public function slot_exists(string $slot_number, int $society_id): ?object
 	{
 		return $this->db->get_where('parking', [
@@ -69,9 +56,6 @@ class Parking_model extends CI_Model
 		])->row();
 	}
 
-	/* ──────────────────────────────────────────────
-	 |  ASSIGN PARKING
-	────────────────────────────────────────────── */
 	public function assign(array $data): bool
 	{
 		return $this->db->insert('parking', [
@@ -85,9 +69,6 @@ class Parking_model extends CI_Model
 		]);
 	}
 
-	/* ──────────────────────────────────────────────
-	 |  REVOKE PARKING
-	────────────────────────────────────────────── */
 	public function revoke(int $id, int $society_id): bool
 	{
 		$this->db->where('id', $id);
@@ -95,10 +76,6 @@ class Parking_model extends CI_Model
 		return $this->db->delete('parking');
 	}
 
-	/* ──────────────────────────────────────────────
-	 |  GET MEMBERS (for assign dropdown)
-	 |  Shows wing name + flat no in dropdown label
-	────────────────────────────────────────────── */
 	public function get_members(int $society_id): array
 	{
 		$this->db->select('u.id, u.name, u.flat_no, u.member_type, w.wing_name');
@@ -111,9 +88,6 @@ class Parking_model extends CI_Model
 		return $this->db->get()->result();
 	}
 
-	/* ──────────────────────────────────────────────
-	 |  STATS
-	────────────────────────────────────────────── */
 	public function get_stats(int $society_id): array
 	{
 		$total = $this->db->where('society_id', $society_id)->count_all_results('parking');
@@ -122,5 +96,14 @@ class Parking_model extends CI_Model
 		$members = $this->db->where('society_id', $society_id)->where_in('member_type', ['owner', 'tenant'])->count_all_results('users');
 
 		return compact('total', 'four_wheel', 'two_wheel', 'members');
+	}
+
+	public function get_all_societies(): array
+	{
+		return $this->db->select('id, name')
+			->from('societies')
+			->order_by('name')
+			->get()
+			->result();
 	}
 }

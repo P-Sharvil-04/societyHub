@@ -15,44 +15,75 @@ class Manage_member_model extends CI_Model
     /* ════════════════════════════════════════════════
      *  FILTERED MEMBERS LIST
      * ════════════════════════════════════════════════ */
-    public function get_filtered($filters = [])
-    {
-        $role_ids = implode(',', self::COMMITTEE_ROLE_IDS);
 
-        $sql = "
-            SELECT
-                u.id, u.name, u.email, u.phone, u.flat_no,
-                u.member_type, u.status, u.created_at,
-                u.society_id, u.wing_id,
-                s.name           AS society_name,
-                w.wing_name      AS wing_name,
-                r_comm.role_name AS committee_role,
-                r_comm.id        AS committee_role_id
-            FROM users u
-            LEFT JOIN societies  s       ON s.id            = u.society_id
-            LEFT JOIN wings      w       ON w.id            = u.wing_id
-            LEFT JOIN user_roles ur_comm ON ur_comm.user_id = u.id
-                                        AND ur_comm.role_id IN ({$role_ids})
-            LEFT JOIN roles      r_comm  ON r_comm.id       = ur_comm.role_id
-            WHERE (u.member_type IN ('owner','tenant') OR ur_comm.role_id IS NOT NULL)
-        ";
+public function get_filtered($filters = [], $limit = null, $offset = 0)
+{
+    $role_ids = implode(',', self::COMMITTEE_ROLE_IDS);
 
-        $binds = [];
-        if (!empty($filters['society_id']))       { $sql .= " AND u.society_id = ?";    $binds[] = (int)$filters['society_id']; }
-        if (!empty($filters['wing_id']))           { $sql .= " AND u.wing_id = ?";       $binds[] = (int)$filters['wing_id']; }
-        if (!empty($filters['member_type']))       { $sql .= " AND u.member_type = ?";   $binds[] = $filters['member_type']; }
-        if (!empty($filters['role']))              { $sql .= " AND r_comm.role_name = ?";$binds[] = $filters['role']; }
-        if (isset($filters['status']) && $filters['status'] !== '') { $sql .= " AND u.status = ?"; $binds[] = (int)$filters['status']; }
-        if (!empty($filters['search'])) {
-            $like = '%' . $this->db->escape_like_str($filters['search']) . '%';
-            $sql .= " AND (u.name LIKE ? OR u.flat_no LIKE ? OR u.phone LIKE ?)";
-            $binds[] = $like; $binds[] = $like; $binds[] = $like;
-        }
-        $sql .= " ORDER BY s.name ASC, CASE WHEN LOWER(r_comm.role_name)='chairman' THEN 0 ELSE 1 END ASC, u.name ASC";
+    $sql = "
+        SELECT
+            u.id, u.name, u.email, u.phone, u.flat_no,
+            u.member_type, u.status, u.created_at,
+            u.society_id, u.wing_id,
+            s.name AS society_name,
+            w.wing_name AS wing_name,
+            r_comm.role_name AS committee_role
+        FROM users u
+        LEFT JOIN societies s ON s.id = u.society_id
+        LEFT JOIN wings w ON w.id = u.wing_id
+        LEFT JOIN user_roles ur_comm 
+            ON ur_comm.user_id = u.id 
+            AND ur_comm.role_id IN ({$role_ids})
+        LEFT JOIN roles r_comm ON r_comm.id = ur_comm.role_id
+        WHERE 1=1
+        AND (u.member_type IN ('owner','tenant') OR ur_comm.role_id IS NOT NULL)
+    ";
 
-        return $this->db->query($sql, $binds)->result();
+    $binds = [];
+
+    if (!empty($filters['society_id'])) {
+        $sql .= " AND u.society_id = ?";
+        $binds[] = (int)$filters['society_id'];
     }
 
+    if (!empty($filters['wing_id'])) {
+        $sql .= " AND u.wing_id = ?";
+        $binds[] = (int)$filters['wing_id'];
+    }
+
+    if (!empty($filters['member_type'])) {
+        $sql .= " AND u.member_type = ?";
+        $binds[] = $filters['member_type'];
+    }
+
+    if (!empty($filters['role'])) {
+        $sql .= " AND LOWER(r_comm.role_name) = ?";
+        $binds[] = strtolower($filters['role']);
+    }
+
+    if (isset($filters['status']) && $filters['status'] !== '') {
+        $sql .= " AND u.status = ?";
+        $binds[] = (int)$filters['status'];
+    }
+
+    if (!empty($filters['search'])) {
+        $like = '%' . $this->db->escape_like_str($filters['search']) . '%';
+        $sql .= " AND (u.name LIKE ? OR u.flat_no LIKE ? OR u.phone LIKE ?)";
+        $binds[] = $like;
+        $binds[] = $like;
+        $binds[] = $like;
+    }
+
+    $sql .= " ORDER BY s.name ASC, u.name ASC";
+
+    if ($limit !== null) {
+        $sql .= " LIMIT ? OFFSET ?";
+        $binds[] = (int)$limit;
+        $binds[] = (int)$offset;
+    }
+
+    return $this->db->query($sql, $binds)->result();
+}
     /* ════════════════════════════════════════════════
      *  STATS
      * ════════════════════════════════════════════════ */
@@ -377,4 +408,58 @@ class Manage_member_model extends CI_Model
         fclose($handle);
         return compact('inserted', 'skipped', 'errors', 'warnings');
     }
+public function count_filtered($filters = [])
+{
+    $role_ids = implode(',', self::COMMITTEE_ROLE_IDS);
+    
+    $sql = "
+        SELECT COUNT(*) as total
+        FROM users u
+        LEFT JOIN user_roles ur_comm 
+            ON ur_comm.user_id = u.id 
+            AND ur_comm.role_id IN ({$role_ids})
+        LEFT JOIN roles r_comm ON r_comm.id = ur_comm.role_id
+        WHERE 1=1
+        AND (u.member_type IN ('owner','tenant') OR ur_comm.role_id IS NOT NULL)
+    ";
+    
+    $binds = [];
+    
+    if (!empty($filters['society_id'])) {
+        $sql .= " AND u.society_id = ?";
+        $binds[] = (int)$filters['society_id'];
+    }
+    
+    if (!empty($filters['wing_id'])) {
+        $sql .= " AND u.wing_id = ?";
+        $binds[] = (int)$filters['wing_id'];
+    }
+    
+    if (!empty($filters['member_type'])) {
+        $sql .= " AND u.member_type = ?";
+        $binds[] = $filters['member_type'];
+    }
+    
+    if (!empty($filters['role'])) {
+        $sql .= " AND LOWER(r_comm.role_name) = ?";
+        $binds[] = strtolower($filters['role']);
+    }
+    
+    if (isset($filters['status']) && $filters['status'] !== '') {
+        $sql .= " AND u.status = ?";
+        $binds[] = (int)$filters['status'];
+    }
+    
+    if (!empty($filters['search'])) {
+        $like = '%' . $this->db->escape_like_str($filters['search']) . '%';
+        $sql .= " AND (u.name LIKE ? OR u.flat_no LIKE ? OR u.phone LIKE ?)";
+        $binds[] = $like;
+        $binds[] = $like;
+        $binds[] = $like;
+    }
+    
+    $result = $this->db->query($sql, $binds)->row();
+    return (int) $result->total;
+}
+
 }

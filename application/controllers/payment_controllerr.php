@@ -3,194 +3,246 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Payment_controllerr extends CI_Controller
 {
+	private $society_id;
+	private $razorpay_key;
+	private $razorpay_secret;
+
 	public function __construct()
 	{
 		parent::__construct();
-		$this->load->model('Payment_model', 'payment_model');
-		// Auth guard — adjust to your session key
-		// if (!$this->session->userdata('admin_id')) redirect('auth/login');
+		$this->load->model('Payment_model', 'pm');
+		$this->load->library('form_validation');
+		$this->load->helper('url');
+		$this->load->helper('security');
+
+		$this->society_id = $this->session->userdata('society_id');
+
+		$this->razorpay_key = 'rzp_test_SQegebn7NHi2HZ';      // Replace with actual
+		$this->razorpay_secret = '6DHNi6FGHUTYpnrq9Zfzm78p'; // Replace with actual
+
+		if (file_exists(APPPATH . 'vendor/autoload.php')) {
+			require_once APPPATH . 'vendor/autoload.php';
+		} elseif (file_exists(APPPATH . 'third_party/razorpay/Razorpay.php')) {
+			require_once APPPATH . 'third_party/razorpay/Razorpay.php';
+		} else {
+			log_message('error', 'Razorpay SDK not found');
+		}
 	}
 
-	// ─── MAIN VIEW ──────────────────────────────────────────────────────────
-
+	/**
+	 * Main payments page – lists all unified payments
+	 */
 	public function payments()
 	{
-		$data['title'] = 'Payment Management';
-		$data['stats'] = $this->payment_model->get_summary_stats();
-		$data['chart'] = $this->payment_model->get_chart_data();
-		$data['payments'] = $this->payment_model->get_all_unified_payments();
-		$data['residents'] = $this->payment_model->get_residents_list();
+		$data['title'] = 'Payment History';
+		$data['stats'] = $this->pm->get_summary_stats($this->society_id);
+		$data['chart'] = $this->pm->get_chart_data($this->society_id);
+		$data['payments'] = $this->pm->get_all_unified_payments(
+			$this->society_id ? ['society_id' => $this->society_id] : []
+		);
+		$data['users'] = $this->pm->get_users_list($this->society_id);
 
+		$this->load->view('header', $data);
 		$this->load->view('payment_view', $data);
 	}
 
-	// ─── AJAX: Filtered / searched payments ─────────────────────────────────
-
-	public function get_payments_ajax()
+	/**
+	 * Maintenance payment page
+	 */
+	public function maintenance_pay()
 	{
-		$filters = [
-			'status' => $this->input->post('status'),
-			'month' => $this->input->post('month'),
-			'resident_id' => $this->input->post('resident_id'),
-		];
+		$society_id = (int) $this->session->userdata('society_id');
+		$user_id = (int) ($this->session->userdata('member_id') ?: $this->session->userdata('user_id'));
+		$flat_no = $this->session->userdata('flat_no') ?: '-';
 
-		$payments = $this->payment_model->get_all_unified_payments(
-			array_filter($filters)   // remove empty keys
-		);
-
-		// Client-side search is fine for small datasets;
-		// pass raw array and let JS handle text search.
-		$this->output
-			->set_content_type('application/json')
-			->set_output(json_encode(['success' => true, 'data' => $payments]));
-	}
-
-	// ─── AJAX: Resident transaction history ─────────────────────────────────
-
-	public function get_resident_history($resident_id = null)
-	{
-		if (!$resident_id) {
-			return $this->_json(['success' => false, 'message' => 'Resident ID required']);
+		if ($society_id <= 0 || $user_id <= 0) {
+			show_error('Unauthorized', 403);
 		}
 
-		$history = $this->payment_model->get_resident_transaction_history($resident_id);
-		$this->_json(['success' => true, 'data' => $history]);
-	}
+		$current_month = date('F');
+		$current_year = (int) date('Y');
 
-	// ─── AJAX: Add payment (manual / maintenance) ───────────────────────────
+		// Check if already paid
+		$alreadyPaid = $this->db->select('id')
+			->from('payments')
+			->where('society_id', $society_id)
+			->where('user_id', $user_id)
+			->where('payment_type', 'maintenance')
+			->where('month', $current_month)
+			->where('year', $current_year)
+			->where('status', 'paid')
+			->limit(1)
+			->get()
+			->row_array();
 
-	public function add_payment()
-	{
-		$rules = [
-			['field' => 'resident_id', 'label' => 'Resident', 'rules' => 'required|integer'],
-			['field' => 'payment_type', 'label' => 'Type', 'rules' => 'required'],
-			['field' => 'amount', 'label' => 'Amount', 'rules' => 'required|numeric'],
-			['field' => 'payment_date', 'label' => 'Payment Date', 'rules' => 'required'],
-			['field' => 'due_date', 'label' => 'Due Date', 'rules' => 'required'],
-			['field' => 'status', 'label' => 'Status', 'rules' => 'required'],
-		];
-
-		$this->form_validation->set_rules($rules);
-
-		if (!$this->form_validation->run()) {
-			return $this->_json(['success' => false, 'message' => validation_errors()]);
+		if ($alreadyPaid) {
+			$this->session->set_flashdata('success', 'Maintenance already paid for this month.');
+			redirect('payment_controllerr/payments');  // redirect to payment list
 		}
 
-		$data = [
-			'resident_id' => $this->input->post('resident_id', TRUE),
-			'resident_name' => $this->input->post('resident_name', TRUE),
-			'flat_number' => $this->input->post('flat_number', TRUE),
-			'payment_type' => $this->input->post('payment_type', TRUE),
-			'amount' => $this->input->post('amount', TRUE),
-			'payment_date' => $this->input->post('payment_date', TRUE),
-			'due_date' => $this->input->post('due_date', TRUE),
-			'payment_method' => $this->input->post('payment_method', TRUE),
-			'transaction_id' => $this->input->post('transaction_id', TRUE),
-			'description' => $this->input->post('description', TRUE),
-			'status' => $this->input->post('status', TRUE),
-		];
+		// Get maintenance amount
+		$amount = $this->pm->get_maintenance_amount($society_id, $flat_no);
+		if ($amount <= 0) {
+			$this->session->set_flashdata('error', 'Maintenance amount not set. Please contact admin.');
+			redirect('payment_controllerr/payments');
+		}
 
-		$id = $this->payment_model->insert_payment($data);
-
-		$this->_json([
-			'success' => (bool) $id,
-			'message' => $id ? 'Payment recorded successfully.' : 'Failed to save payment.',
-			'id' => $id,
-		]);
-	}
-
-	// ─── AJAX: Edit payment ──────────────────────────────────────────────────
-
-	public function edit_payment($id = null)
-	{
-		if (!$id)
-			return $this->_json(['success' => false, 'message' => 'ID required']);
+		$dueDate = $this->pm->get_maintenance_due_date($society_id);
 
 		$data = [
-			'payment_type' => $this->input->post('payment_type', TRUE),
-			'amount' => $this->input->post('amount', TRUE),
-			'payment_date' => $this->input->post('payment_date', TRUE),
-			'due_date' => $this->input->post('due_date', TRUE),
-			'payment_method' => $this->input->post('payment_method', TRUE),
-			'transaction_id' => $this->input->post('transaction_id', TRUE),
-			'description' => $this->input->post('description', TRUE),
-			'status' => $this->input->post('status', TRUE),
+			'title' => 'Maintenance',
+			'activePage' => 'payment',
+			'amount' => $amount,
+			'month' => $current_month,
+			'year' => $current_year,
+			'flatNo' => $flat_no,
+			'userName' => $this->session->userdata('user_name') ?: 'Guest',
+			'maintenance_due_date' => $dueDate,
+			'razorpay_key' => $this->razorpay_key,
 		];
 
-		$ok = $this->payment_model->update_payment($id, $data);
-		$this->_json(['success' => (bool) $ok, 'message' => $ok ? 'Payment updated.' : 'Update failed.']);
+		$this->load->view('header', $data);
+		$this->load->view('maintenance_pay_view', $data);
 	}
 
-	// ─── AJAX: Delete payment ───────────────────────────────────────────────
-
-	public function delete_payment($id = null)
+	/**
+	 * AJAX: Create Razorpay order
+	 */
+	public function create_razorpay_order()
 	{
-		if (!$id)
-			return $this->_json(['success' => false, 'message' => 'ID required']);
+		$this->output->set_content_type('application/json');
 
-		$ok = $this->payment_model->delete_payment($id);
-		$this->_json(['success' => (bool) $ok, 'message' => $ok ? 'Payment deleted.' : 'Delete failed.']);
-	}
+		if (!class_exists('Razorpay\Api\Api')) {
+			$this->_json(['error' => 'Razorpay SDK not loaded. Contact admin.']);
+			return;
+		}
 
-	// ─── AJAX: Single payment detail ────────────────────────────────────────
+		$amount = (float) $this->input->post('amount');
+		$month = $this->input->post('month');
+		$year = (int) $this->input->post('year');
 
-	public function get_payment($id = null)
-	{
-		if (!$id)
-			return $this->_json(['success' => false, 'message' => 'ID required']);
+		if (!$amount || !$month || !$year) {
+			$this->_json(['error' => 'Invalid parameters']);
+			return;
+		}
 
-		$payment = $this->payment_model->get_payment_by_id($id);
-		$this->_json(
-			$payment
-			? ['success' => true, 'data' => $payment]
-			: ['success' => false, 'message' => 'Not found']
-		);
-	}
+		if (empty($this->razorpay_key) || $this->razorpay_key === 'YOUR_RAZORPAY_KEY_ID') {
+			$this->_json(['error' => 'Razorpay key not configured.']);
+			return;
+		}
 
-	// ─── AJAX: Export CSV ───────────────────────────────────────────────────
-
-	public function export_payments()
-	{
-		$payments = $this->payment_model->get_all_unified_payments();
-
-		header('Content-Type: text/csv');
-		header('Content-Disposition: attachment; filename="payments_' . date('Y-m-d') . '.csv"');
-
-		$out = fopen('php://output', 'w');
-		fputcsv($out, [
-			'Invoice ID',
-			'Source',
-			'Resident',
-			'Flat',
-			'Type',
-			'Amount',
-			'Payment Date',
-			'Due Date',
-			'Method',
-			'Transaction ID',
-			'Status',
-		]);
-
-		foreach ($payments as $p) {
-			fputcsv($out, [
-				$p['invoice_id'],
-				ucfirst($p['source_type']),
-				$p['resident_name'],
-				$p['flat'],
-				$p['payment_type'],
-				$p['amount'],
-				$p['payment_date'],
-				$p['due_date'],
-				$p['payment_method'],
-				$p['transaction_id'],
-				$p['status'],
+		try {
+			$api = new Razorpay\Api\Api($this->razorpay_key, $this->razorpay_secret);
+			$order = $api->order->create([
+				'receipt' => 'maint_' . uniqid(),
+				'amount' => (int) ($amount * 100),
+				'currency' => 'INR',
+				'payment_capture' => 1,
 			]);
-		}
 
-		fclose($out);
+			$this->session->set_userdata([
+				'razorpay_order_id' => $order['id'],
+				'payment_amount' => $amount,
+				'payment_month' => $month,
+				'payment_year' => $year,
+				'payment_society_id' => $this->society_id,
+				'payment_user_id' => $this->session->userdata('user_id'),
+			]);
+
+			$this->_json([
+				'order_id' => $order['id'],
+				'amount' => $amount,
+				'key' => $this->razorpay_key
+			]);
+		} catch (Exception $e) {
+			log_message('error', 'Razorpay order creation failed: ' . $e->getMessage());
+			$this->_json(['error' => 'Unable to create order. Please try again later.']);
+		}
 	}
 
-	// ─── Helper ─────────────────────────────────────────────────────────────
+	/**
+	 * AJAX: Payment success callback
+	 */
+	public function payment_success()
+	{
+		$this->output->set_content_type('application/json');
+
+		$input = json_decode(file_get_contents('php://input'), true);
+		$razorpay_payment_id = $input['razorpay_payment_id'] ?? null;
+		$razorpay_order_id = $input['razorpay_order_id'] ?? null;
+		$razorpay_signature = $input['razorpay_signature'] ?? null;
+
+		if (!$razorpay_payment_id || !$razorpay_order_id || !$razorpay_signature) {
+			$this->_json(['success' => false, 'message' => 'Missing payment details']);
+			return;
+		}
+
+		$expected_order_id = $this->session->userdata('razorpay_order_id');
+		$society_id = $this->session->userdata('payment_society_id');
+		$user_id = $this->session->userdata('payment_user_id');
+		$amount = $this->session->userdata('payment_amount');
+		$month = $this->session->userdata('payment_month');
+		$year = $this->session->userdata('payment_year');
+
+		if ($razorpay_order_id !== $expected_order_id) {
+			$this->_json(['success' => false, 'message' => 'Order ID mismatch']);
+			return;
+		}
+
+		if (!class_exists('Razorpay\Api\Api')) {
+			$this->_json(['success' => false, 'message' => 'Razorpay SDK missing']);
+			return;
+		}
+
+		try {
+			$api = new Razorpay\Api\Api($this->razorpay_key, $this->razorpay_secret);
+			$attributes = [
+				'razorpay_order_id' => $razorpay_order_id,
+				'razorpay_payment_id' => $razorpay_payment_id,
+				'razorpay_signature' => $razorpay_signature,
+			];
+			$api->utility->verifyPaymentSignature($attributes);
+
+			$paymentData = [
+				'society_id' => $society_id,
+				'user_id' => $user_id,
+				'amount' => $amount,
+				'payment_type' => 'maintenance',
+				'month' => $month,
+				'year' => $year,
+				'status' => 'paid',
+				'payment_date' => date('Y-m-d H:i:s'),
+				'payment_id' => $razorpay_payment_id,
+				'order_id' => $razorpay_order_id,
+				'created_by' => null,
+			];
+
+			$inserted = $this->pm->insert_payment($paymentData);
+
+			$this->session->unset_userdata([
+				'razorpay_order_id',
+				'payment_amount',
+				'payment_month',
+				'payment_year',
+				'payment_society_id',
+				'payment_user_id'
+			]);
+
+			if ($inserted) {
+				// Return redirect URL to the payment list page
+				$this->_json([
+					'success' => true,
+					'message' => 'Payment recorded successfully.',
+					'redirect_url' => site_url('payment_controllerr/payments')
+				]);
+			} else {
+				$this->_json(['success' => false, 'message' => 'Payment verified but failed to save record.']);
+			}
+		} catch (Exception $e) {
+			log_message('error', 'Razorpay verification failed: ' . $e->getMessage());
+			$this->_json(['success' => false, 'message' => 'Payment verification failed: ' . $e->getMessage()]);
+		}
+	}
 
 	private function _json($data)
 	{
@@ -198,4 +250,5 @@ class Payment_controllerr extends CI_Controller
 			->set_content_type('application/json')
 			->set_output(json_encode($data));
 	}
+	
 }

@@ -35,7 +35,7 @@ class Society_setup extends CI_Controller
 		return (int) $this->session->userdata('society_id');
 	}
 
-	/* ── Index (wizard) ──────────────────────── */
+	/* ── Index ── */
 	public function index(): void
 	{
 		$isSuper = $this->_is_super();

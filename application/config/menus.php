@@ -96,5 +96,11 @@ $config['menus'] = [
 		'icon' => 'fas fa-robot',
 		'section' => 'insights',
 	],
+	
+	'cctv' => [
+		'title' => 'CCTV',
+		'url' => 'cctv',
+		'icon' => 'fas fa-video',
+	],
 
 ];

@@ -251,7 +251,7 @@
         </div>
     <?php endif; ?>
 
-    <!-- Stats -->
+    <!-- Stats (common to all sections) -->
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-icon"><i class="fas fa-square-parking"></i></div>
@@ -330,8 +330,7 @@
                             <div class="table-wrap">
                                 <table>
                                     <thead>
-                                        <tr>
-                                            <th>#</th>
+                                        32<th>#</th>
                                             <th>Slot</th>
                                             <th>Flat / Wing</th>
                                             <th>Member</th>
@@ -479,6 +478,137 @@
             </div>
             <?php endif; ?>
         </div><!-- /right -->
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         SUPER_ADMIN VIEW
+    ═══════════════════════════════════════════ -->
+    <?php elseif ($section === 'super_admin'): ?>
+    <!-- Society selector -->
+    <div class="card" style="margin-bottom: 20px;">
+        <div class="card-header">
+            <h3><i class="fas fa-building"></i> Select Society</h3>
+        </div>
+        <div class="card-body">
+            <form method="post" action="<?= site_url('parking/super_admin_dashboard') ?>">
+    <select name="society_id" class="form-select" onchange="this.form.submit()">
+                    <?php foreach ($societies as $s): ?>
+                        <option value="<?= $s->id ?>" <?= ($selected_society_id ?? 0) == $s->id ? 'selected' : '' ?>>
+                            <?= html_escape($s->name) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </form>
+        </div>
+    </div>
+
+    <!-- Parking records for selected society -->
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-list-check"></i> Parking Records · <?= html_escape($selected_society_name ?? '') ?></h3>
+            <span class="badge b-cnt"><?= count($parking_list ?? []) ?> records</span>
+        </div>
+        <div class="card-body">
+            <div class="park-tabs">
+                <button class="park-tab on" data-tab="sa-grid"><i class="fas fa-th"></i> Visual Grid</button>
+                <button class="park-tab"    data-tab="sa-table"><i class="fas fa-list"></i> Table View</button>
+            </div>
+
+            <!-- GRID VIEW -->
+            <div class="pane on" id="sa-grid">
+                <?php if (empty($parking_list)): ?>
+                    <div class="empty-state"><i class="fas fa-square-parking"></i>No parking assigned yet.</div>
+                <?php else: ?>
+                    <div class="park-grid">
+                        <?php foreach ($parking_list as $p): ?>
+                        <div class="park-tile <?= $p->vehicle_type === '4-Wheeler' ? 't4w' : 't2w' ?>">
+                            <div class="tile-slot"><?= html_escape($p->slot_number) ?></div>
+                            <?php if (!empty($p->flat_no)): ?>
+                                <div class="tile-flat">
+                                    <i class="fas fa-door-closed"></i>
+                                    <?= !empty($p->wing_name) ? html_escape($p->wing_name).' · ' : '' ?>
+                                    <?= html_escape($p->flat_no) ?>
+                                </div>
+                            <?php else: ?>
+                                <div class="tile-flat none">No flat assigned</div>
+                            <?php endif; ?>
+                            <div class="tile-info">
+                                <strong><?= html_escape($p->owner_name ?? '—') ?></strong><br>
+                                <?= $p->vehicle_type === '4-Wheeler' ? '🚗' : '🛵' ?>
+                                <?= !empty($p->vehicle_number) ? html_escape($p->vehicle_number) : 'No vehicle no.' ?>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <!-- TABLE VIEW (no Action column) -->
+            <div class="pane" id="sa-table">
+                <?php if (empty($parking_list)): ?>
+                    <div class="empty-state"><i class="fas fa-list"></i>No records.</div>
+                <?php else: ?>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Slot</th>
+                                    <th>Flat / Wing</th>
+                                    <th>Member</th>
+                                    <th>Type</th>
+                                    <th>Vehicle No.</th>
+                                    <th>Allocated By</th>
+                                    <th>Allocated On</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            <?php foreach ($parking_list as $i => $p): ?>
+                                <tr>
+                                    <td style="color:var(--text-light);font-size:.75rem;"><?= $i+1 ?></td>
+                                    <td><strong><?= html_escape($p->slot_number) ?></strong></td>
+                                    <td>
+                                        <?php if (!empty($p->flat_no)): ?>
+                                            <div class="flat-cell">
+                                                <span class="flat-chip">
+                                                    <i class="fas fa-door-closed"></i>
+                                                    <?= html_escape($p->flat_no) ?>
+                                                </span>
+                                                <?php if (!empty($p->wing_name)): ?>
+                                                    <span class="wing-chip">
+                                                        <i class="fas fa-layer-group"></i>
+                                                        <?= html_escape($p->wing_name) ?>
+                                                    </span>
+                                                <?php endif; ?>
+                                            </div>
+                                        <?php else: ?>
+                                            <span style="color:var(--text-light);font-size:.78rem;">—</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?= html_escape($p->owner_name ?? '—') ?>
+                                        <?php if (!empty($p->owner_type)): ?>
+                                            <span class="badge <?= $p->owner_type === 'owner' ? 'b-owner' : 'b-ten' ?>" style="margin-left:4px;">
+                                                <?= ucfirst($p->owner_type) ?>
+                                            </span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <span class="badge <?= $p->vehicle_type === '4-Wheeler' ? 'b-4w' : 'b-2w' ?>">
+                                            <?= $p->vehicle_type === '4-Wheeler' ? '🚗 4W' : '🛵 2W' ?>
+                                        </span>
+                                    </td>
+                                    <td><?= html_escape($p->vehicle_number ?? '—') ?></td>
+                                    <td style="font-size:.78rem;"><?= html_escape($p->allocated_by_name ?? '—') ?></td>
+                                    <td style="font-size:.78rem;white-space:nowrap;"><?= date('d M Y', strtotime($p->allocated_at)) ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
     </div>
 
     <!-- ═══════════════════════════════════════════

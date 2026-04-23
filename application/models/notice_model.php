@@ -9,84 +9,21 @@ class Notice_model extends CI_Model
 		$this->load->database();
 	}
 
-	/* FETCH — filtered list
-	 * filters keys: search, type, status
-	 * $society_id === null => no society filter (all societies)
-	 */
+	/* ── Notices ── */
+
 	public function get_notices($society_id = null, $filters = [])
 	{
-		$this->db->reset_query();
-		$this->db
+		$this->db->reset_query()
 			->select('notices.*, societies.name AS society_name')
 			->from('notices')
 			->join('societies', 'societies.id = notices.society_id', 'left');
 
-		// apply society scope only when provided (null means "all")
-		if ($society_id !== null) {
-			$this->db->where('notices.society_id', (int) $society_id);
-		}
+		$this->_applyScope($society_id);
+		$this->_applyFilters($filters);
 
-		if (!empty($filters['search'])) {
-			$this->db->group_start()
-				->like('notices.title', $filters['search'])
-				->or_like('notices.description', $filters['search'])
-				->or_like('notices.notice_id', $filters['search'])
-				->group_end();
-		}
-		if (!empty($filters['type'])) {
-			$this->db->where('notices.notice_type', $filters['type']);
-		}
-		if (!empty($filters['status'])) {
-			$this->db->where('notices.status', $filters['status']);
-		}
-
-		return $this->db
-			->order_by('notices.created_at', 'DESC')
-			->get()->result_array();
+		return $this->db->order_by('notices.created_at', 'DESC')->get()->result_array();
 	}
 
-	/* STATS — build fresh query each time to avoid builder leakage */
-	public function get_stats($society_id = null, $filters = [])
-	{
-		$build_count = function ($status = null) use ($society_id, $filters) {
-			$this->db->reset_query();
-			$this->db->from('notices');
-
-			if ($society_id !== null) {
-				$this->db->where('notices.society_id', (int) $society_id);
-			}
-			if ($status !== null) {
-				$this->db->where('notices.status', $status);
-			}
-			if (!empty($filters['search'])) {
-				$this->db->group_start()
-					->like('notices.title', $filters['search'])
-					->or_like('notices.description', $filters['search'])
-					->or_like('notices.notice_id', $filters['search'])
-					->group_end();
-			}
-			if (!empty($filters['type'])) {
-				$this->db->where('notices.notice_type', $filters['type']);
-			}
-
-			return (int) $this->db->count_all_results();
-		};
-
-		$total = $build_count(null);
-		$active = $build_count('active');
-		$scheduled = $build_count('scheduled');
-		$expired = $build_count('expired');
-
-		$this->db->reset_query();
-		return [
-			'total' => $total,
-			'active' => $active,
-			'scheduled' => $scheduled,
-			'expired' => $expired,
-		];
-	}
-
-	/* SINGLE */
 	public function get_notice($id)
 	{
 		return $this->db
@@ -97,14 +34,13 @@ class Notice_model extends CI_Model
 			->get()->row_array();
 	}
 
-	/* WRITE */
-	public function add_notice($data)
+	public function add_notice(array $data)
 	{
 		$this->db->insert('notices', $data);
 		return $this->db->insert_id();
 	}
 
-	public function edit_notice($id, $data)
+	public function edit_notice($id, array $data)
 	{
 		return $this->db->where('id', (int) $id)->update('notices', $data);
 	}
@@ -114,71 +50,125 @@ class Notice_model extends CI_Model
 		return $this->db->where('id', (int) $id)->delete('notices');
 	}
 
-	/* RECENT */
+	/* ── Stats ───────────────────────────────────────── */
+
+	public function get_stats($society_id = null, $filters = [])
+	{
+		$count = function ($status = null) use ($society_id, $filters) {
+			$this->db->reset_query()->from('notices');
+			$this->_applyScope($society_id);
+			if ($status)
+				$this->db->where('notices.status', $status);
+			$this->_applyFilters($filters, false); // search + type only, skip status
+			return (int) $this->db->count_all_results();
+		};
+
+		return [
+			'total' => $count(),
+			'active' => $count('active'),
+			'scheduled' => $count('scheduled'),
+			'expired' => $count('expired'),
+		];
+	}
+
+	/* ── Recent ──────────────────────────────────────── */
+
 	public function get_recent_notices($society_id = null, $limit = 5)
 	{
-		$this->db->reset_query();
-		$this->db
+		$this->db->reset_query()
 			->select('notices.*, societies.name AS society_name')
 			->from('notices')
 			->join('societies', 'societies.id = notices.society_id', 'left');
 
-		if ($society_id !== null) {
-			$this->db->where('notices.society_id', (int) $society_id);
-		}
+		$this->_applyScope($society_id);
 
-		return $this->db
-			->order_by('notices.created_at', 'DESC')
-			->limit((int) $limit)
-			->get()->result_array();
+		return $this->db->order_by('notices.created_at', 'DESC')->limit((int) $limit)->get()->result_array();
 	}
 
-	/* MONTHLY DATA */
+	/* ── Monthly chart data (last 6 months) ─────────── */
+
 	public function get_monthly_data($society_id = null)
 	{
 		$labels = [];
 		$data = [];
-
 		for ($i = 5; $i >= 0; $i--) {
-			$dt = new DateTime();
-			$dt->modify("-{$i} months");
-
-			$this->db->reset_query();
-			$this->db->from('notices');
-
-			if ($society_id !== null) {
-				$this->db->where('society_id', (int) $society_id);
-			}
-
-			$this->db
-				->where('MONTH(created_at)', $dt->format('m'))
-				->where('YEAR(created_at)', $dt->format('Y'));
-
+			$dt = (new DateTime())->modify("-{$i} months");
+			$this->db->reset_query()->from('notices');
+			$this->_applyScope($society_id);
+			$this->db->where('MONTH(created_at)', $dt->format('m'))->where('YEAR(created_at)', $dt->format('Y'));
 			$data[] = (int) $this->db->count_all_results();
 			$labels[] = $dt->format('M Y');
 		}
-
-		$this->db->reset_query();
 		return ['labels' => $labels, 'data' => $data];
 	}
 
-	/* SOCIETIES */
+	/* ── Societies list ──────────────────────────────── */
+
 	public function get_societies()
 	{
-		return $this->db
-			->select('id, name')
-			->order_by('name', 'ASC')
-			->get('societies')->result_array();
+		return $this->db->select('id, name')->order_by('name', 'ASC')->get('societies')->result_array();
 	}
 
-	/* ID generator */
+	/* ── Notice ID generator ─────────────────────────── */
+
 	public function generate_notice_id()
 	{
-		$this->db->reset_query();
 		$year = date('Y');
-		$count = $this->db
-			->like('notice_id', "NOT-{$year}-", 'after')
-			->count_all_results('notices');
+		$count = $this->db->reset_query()->like('notice_id', "NOT-{$year}-", 'after')->count_all_results('notices');
 		return 'NOT-' . $year . '-' . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
+	}
+
+	/* ── Notifications ───────────────────────────────── */
+
+	public function insert_notification(array $data)
+	{
+		return $this->db->insert('notifications', $data);
+	}
+
+	public function get_unread_notifications($society_id)
+	{
+		return $this->db
+			->select('id, notice_id, title, message, is_read, created_at')
+			->where('society_id', (int) $society_id)
+			->where('is_read', 0)
+			->order_by('created_at', 'DESC')
+			->limit(50)
+			->get('notifications')->result_array();
+	}
+
+	public function mark_notification_read($id)
+	{
+		return $this->db->where('id', (int) $id)->update('notifications', ['is_read' => 1]);
+	}
+
+	public function mark_all_notifications_read($society_id)
+	{
+		return $this->db->where('society_id', (int) $society_id)->where('is_read', 0)->update('notifications', ['is_read' => 1]);
+	}
+
+	/* ════════════════════════════════════════════════════
+	   PRIVATE QUERY HELPERS
+	════════════════════════════════════════════════════ */
+
+	private function _applyScope($society_id): void
+	{
+		if ($society_id !== null) {
+			$this->db->where('notices.society_id', (int) $society_id);
+		}
+	}
+
+	private function _applyFilters(array $f, bool $includeStatus = true): void
+	{
+		if (!empty($f['search'])) {
+			$this->db->group_start()
+				->like('notices.title', $f['search'])
+				->or_like('notices.description', $f['search'])
+				->or_like('notices.notice_id', $f['search'])
+				->group_end();
+		}
+		if (!empty($f['type']))
+			$this->db->where('notices.notice_type', $f['type']);
+		if ($includeStatus && !empty($f['status']))
+			$this->db->where('notices.status', $f['status']);
 	}
 }

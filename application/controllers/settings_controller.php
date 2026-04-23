@@ -64,6 +64,32 @@ class settings_controller extends CI_Controller
 			$society_row = $this->db->get_where('societies', ['id' => $this->_society()])->row_array();
 		}
 
+		// ---------- MAINTENANCE STATUS FOR CURRENT USER ----------
+		$society_id = $this->_society();
+		$user_id = $this->_uid();
+		$maintenance_paid = false;
+		$maintenance_amount = null;
+		$maintenance_due_date = null;
+
+		if ($society_id > 0) {
+			$soc_settings = $this->Settings_model->get_society_settings($society_id);
+			$maintenance_amount = isset($soc_settings['maintenance_amount']) && is_numeric($soc_settings['maintenance_amount'])
+				? (float) $soc_settings['maintenance_amount'] : null;
+			$maintenance_due_date = isset($soc_settings['maintenance_due_date']) && is_numeric($soc_settings['maintenance_due_date'])
+				? (int) $soc_settings['maintenance_due_date'] : null;
+
+			$current_month = date('F');
+			$current_year = date('Y');
+			$this->db->where('society_id', $society_id)
+				->where('user_id', $user_id)
+				->where('payment_type', 'maintenance')
+				->where('month', $current_month)
+				->where('year', $current_year)
+				->where('status', 'paid');
+			$paid = $this->db->get('payments')->row_array();
+			$maintenance_paid = !empty($paid);
+		}
+
 		$data = [
 			'title' => 'Settings',
 			'activePage' => 'settings',
@@ -76,6 +102,11 @@ class settings_controller extends CI_Controller
 			'isOwner' => $this->_is_owner(),
 			'isChairman' => ($role === 'chairman'),
 			'role' => $role,
+			// Maintenance data
+			'society_id' => $society_id,
+			'maintenance_paid' => $maintenance_paid,
+			'maintenance_amount' => $maintenance_amount,
+			'maintenance_due_date' => $maintenance_due_date,
 		];
 
 		$this->load->view('header', $data);
@@ -100,7 +131,33 @@ class settings_controller extends CI_Controller
 			$this->session->set_flashdata('error', 'That email is already in use by another account.');
 			redirect('settings_controller');
 		}
+		$upload_path = './uploads/profile/';
+		if (!is_dir($upload_path)) {
+			mkdir($upload_path, 0777, true);
+		}
 
+		$config['upload_path'] = $upload_path;
+		$config['allowed_types'] = 'jpg|jpeg|png';
+		$config['max_size'] = 2048; // 2MB
+		$config['encrypt_name'] = TRUE;
+
+		$this->load->library('upload', $config);
+
+		if (!empty($_FILES['profile_image']['name'])) {
+			if ($this->upload->do_upload('profile_image')) {
+				$upload_data = $this->upload->data();
+				$data['profile_image'] = $upload_data['file_name'];
+
+				// Delete old image if exists
+				$old_image = $this->input->post('old_profile_image');
+				if ($old_image && file_exists($upload_path . $old_image)) {
+					unlink($upload_path . $old_image);
+				}
+			} else {
+				$this->session->set_flashdata('error', $this->upload->display_errors());
+				redirect('settings');
+			}
+		}
 		$upd = [
 			'name' => $this->input->post('name', TRUE),
 			'email' => $email,
@@ -206,6 +263,7 @@ class settings_controller extends CI_Controller
 			'razorpay_test_mode'
 		];
 		$keys = array_merge($checkboxes, [
+			'maintenance_amount',
 			'maintenance_due_date',
 			'maintenance_late_fee',
 			'interest_rate',
@@ -263,7 +321,7 @@ class settings_controller extends CI_Controller
 		}
 		$soc = $this->db->get_where('societies', ['id' => (int) $id])->row_array();
 		if ($soc) {
-			$new = ($soc['status'] ?? 'active') === 'active' ? 'diactivated' : 'active';
+			$new = ($soc['status'] ?? 'active') === 'active' ? 'inactive' : 'active';
 			$this->Settings_model->update_society((int) $id, ['status' => $new]);
 			$this->session->set_flashdata('success', 'Society status toggled to ' . $new . '.');
 		}

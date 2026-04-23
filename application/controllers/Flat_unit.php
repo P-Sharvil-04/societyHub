@@ -2,12 +2,15 @@
 
 class Flat_unit extends CI_Controller
 {
+    /** Records shown per page in table view */
+    const PER_PAGE = 15;
+
     public function __construct()
     {
         parent::__construct();
         $this->load->model('Flat_unit_model', 'flat_model');
         $this->load->helper(['url', 'form', 'html']);
-        $this->load->library(['session', 'form_validation']);
+        $this->load->library(['session', 'form_validation', 'pagination']);
         $this->_auth_check();
     }
 
@@ -27,7 +30,6 @@ class Flat_unit extends CI_Controller
         return in_array($role, ['super_admin', 'superadmin', 'super admin']);
     }
 
-    /* ── ordinal() helper (available in view too) ── */
     private function _ensure_ordinal(): void
     {
         if (!function_exists('ordinal')) {
@@ -46,7 +48,7 @@ class Flat_unit extends CI_Controller
         $isSuperAdmin = $this->_is_super_admin();
         $societyId    = $this->_society_id();
 
-        /* Collect GET filters */
+        /* ── Filters ── */
         $filters = [
             'society_id' => (int)($this->input->get('society_id') ?? 0),
             'wing_id'    => (int)($this->input->get('wing_id')    ?? 0),
@@ -62,7 +64,81 @@ class Flat_unit extends CI_Controller
             $filters['society_id'] = 0;
         }
 
-        $flats             = $this->flat_model->get_flats($filters, $isSuperAdmin);
+        /* ── Pagination ── */
+        $perPage    = self::PER_PAGE;
+        $totalCount = $this->flat_model->count_flats($filters, $isSuperAdmin);
+
+        // Read current page from GET (1-based), convert to offset
+        $currentPage = max(1, (int)($this->input->get('page') ?? 1));
+        $offset      = ($currentPage - 1) * $perPage;
+
+        // Clamp offset so we never go past the last page
+        if ($totalCount > 0 && $offset >= $totalCount) {
+            $currentPage = (int)ceil($totalCount / $perPage);
+            $offset      = ($currentPage - 1) * $perPage;
+        }
+
+        /* ── Build base URL for pagination (preserve all filters) ── */
+        $queryParams = array_filter([
+            'society_id' => $filters['society_id'] ?: '',
+            'wing_id'    => $filters['wing_id']    ?: '',
+            'floor'      => $filters['floor'],
+            'flat_type'  => $filters['flat_type'],
+            'status'     => $filters['status'],
+            'search'     => $filters['search'],
+        ], fn($v) => $v !== '' && $v !== null && $v !== 0);
+
+        $baseUrl = site_url('flat_unit') . '?' . ($queryParams ? http_build_query($queryParams) . '&' : '');
+
+        /* ── Configure CI Pagination ── */
+        $this->pagination->initialize([
+            // Core
+            'base_url'             => $baseUrl,
+            'total_rows'           => $totalCount,
+            'per_page'             => $perPage,
+            'use_page_numbers'     => TRUE,   // page=1, page=2 … instead of offsets
+            'page_query_string'    => TRUE,
+            'query_string_segment' => 'page',
+            'cur_page'             => $currentPage,
+
+            // Wrapper
+            'full_tag_open'        => '<nav class="ci-pagination" aria-label="Flat list pages"><ul class="pg-list">',
+            'full_tag_close'       => '</ul></nav>',
+
+            // Number links
+            'num_tag_open'         => '<li class="pg-item">',
+            'num_tag_close'        => '</li>',
+            'num_links'            => 4,
+
+            // Current page
+            'cur_tag_open'         => '<li class="pg-item active"><span class="pg-link">',
+            'cur_tag_close'        => '</span></li>',
+
+            // First / Last
+            'first_link'           => '&laquo;',
+            'first_tag_open'       => '<li class="pg-item">',
+            'first_tag_close'      => '</li>',
+            'last_link'            => '&raquo;',
+            'last_tag_open'        => '<li class="pg-item">',
+            'last_tag_close'       => '</li>',
+
+            // Prev / Next
+            'prev_link'            => '&lsaquo; Prev',
+            'prev_tag_open'        => '<li class="pg-item">',
+            'prev_tag_close'       => '</li>',
+            'next_link'            => 'Next &rsaquo;',
+            'next_tag_open'        => '<li class="pg-item">',
+            'next_tag_close'       => '</li>',
+
+            // Disabled (first/last when at edges)
+            'first_url'            => '',
+            'attributes'           => ['class' => 'pg-link'],
+        ]);
+
+        $paginationLinks = $this->pagination->create_links();
+
+        /* ── Data ── */
+        $flats             = $this->flat_model->get_flats($filters, $isSuperAdmin, $perPage, $offset);
         $floorList         = $this->flat_model->get_floors($isSuperAdmin ? 0 : $societyId);
         $wings             = $this->flat_model->get_wings($isSuperAdmin  ? 0 : $societyId);
         $societies         = $isSuperAdmin ? $this->flat_model->get_societies() : [];
@@ -87,6 +163,10 @@ class Flat_unit extends CI_Controller
         $blockedPercent  = round(($blocked       / $safe) * 100);
         $ownerPercent    = round(($ownerOccupied / $safe) * 100);
 
+        /* Showing X – Y of Z */
+        $showFrom = $totalCount > 0 ? $offset + 1 : 0;
+        $showTo   = min($offset + $perPage, $totalCount);
+
         $this->_ensure_ordinal();
 
         $data = [
@@ -108,6 +188,13 @@ class Flat_unit extends CI_Controller
             'vacantPercent'     => $vacantPercent,
             'blockedPercent'    => $blockedPercent,
             'ownerPercent'      => $ownerPercent,
+            // Pagination extras
+            'paginationLinks'   => $paginationLinks,
+            'totalCount'        => $totalCount,
+            'currentPage'       => $currentPage,
+            'perPage'           => $perPage,
+            'showFrom'          => $showFrom,
+            'showTo'            => $showTo,
         ];
 
         $this->load->view('header', $data);
@@ -135,7 +222,6 @@ class Flat_unit extends CI_Controller
             redirect('flat_unit');
         }
 
-        /* Status comes in as string from form → convert to tinyint for DB */
         $statusMap = ['occupied' => 0, 'vacant' => 1, 'blocked' => 2];
         $statusInt = $statusMap[$this->input->post('status', TRUE)] ?? 1;
 
@@ -269,10 +355,9 @@ class Flat_unit extends CI_Controller
             }
         }
 
-        $statusMap   = ['occupied' => 0, 'vacant' => 1, 'blocked' => 2];
-        $wingsCache  = [];
-        $wingRows    = $this->flat_model->get_wings($societyId);
-        foreach ($wingRows as $w) {
+        $statusMap  = ['occupied' => 0, 'vacant' => 1, 'blocked' => 2];
+        $wingsCache = [];
+        foreach ($this->flat_model->get_wings($societyId) as $w) {
             $wingsCache[strtolower(trim($w->wing_name))] = (int)$w->id;
         }
 
@@ -281,11 +366,7 @@ class Flat_unit extends CI_Controller
             if (count($row) < count($headers)) continue;
             $r = array_combine($headers, array_map('trim', $row));
 
-            $wingId = null;
-            if (!empty($r['wing_name'])) {
-                $wingId = $wingsCache[strtolower($r['wing_name'])] ?? null;
-            }
-
+            $wingId    = !empty($r['wing_name']) ? ($wingsCache[strtolower($r['wing_name'])] ?? null) : null;
             $statusStr = strtolower($r['status'] ?? 'vacant');
             if (!array_key_exists($statusStr, $statusMap)) $statusStr = 'vacant';
 
@@ -299,10 +380,10 @@ class Flat_unit extends CI_Controller
                 'flat_no'      => substr($r['flat_no'], 0, 20),
                 'floor'        => (int)($r['floor'] ?? 0),
                 'flat_type'    => $r['flat_type'] ?? '2BHK',
-                'area_sqft'    => !empty($r['area_sqft'])    ? (int)$r['area_sqft']    : null,
+                'area_sqft'    => !empty($r['area_sqft'])    ? (int)$r['area_sqft']  : null,
                 'status'       => $statusMap[$statusStr],
-                'parking_slot' => !empty($r['parking_slot']) ? $r['parking_slot']      : null,
-                'remarks'      => !empty($r['remarks'])      ? $r['remarks']            : null,
+                'parking_slot' => !empty($r['parking_slot']) ? $r['parking_slot']    : null,
+                'remarks'      => !empty($r['remarks'])      ? $r['remarks']          : null,
                 'created_at'   => date('Y-m-d H:i:s'),
             ]);
             $inserted++;

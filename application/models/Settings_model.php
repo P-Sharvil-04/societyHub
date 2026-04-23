@@ -1,27 +1,6 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-/*
- * SQL to create the two tables:
- *
- * CREATE TABLE `system_settings` (
- *   `id`          INT UNSIGNED NOT NULL AUTO_INCREMENT,
- *   `setting_key` VARCHAR(100) NOT NULL UNIQUE,
- *   `setting_val` TEXT DEFAULT NULL,
- *   `updated_at`  DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
- *   PRIMARY KEY (`id`)
- * ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
- *
- * CREATE TABLE `society_settings` (
- *   `id`          INT UNSIGNED NOT NULL AUTO_INCREMENT,
- *   `society_id`  INT UNSIGNED NOT NULL,
- *   `setting_key` VARCHAR(100) NOT NULL,
- *   `setting_val` TEXT DEFAULT NULL,
- *   `updated_at`  DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
- *   PRIMARY KEY (`id`),
- *   UNIQUE KEY `uq_soc_key` (`society_id`, `setting_key`)
- * ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
- */
 class Settings_model extends CI_Model
 {
 	/* ════════════════════════════════════════════════
@@ -58,11 +37,11 @@ class Settings_model extends CI_Model
 		$exists = $this->db->get_where('system_settings', ['setting_key' => $key])->row_array();
 		if ($exists) {
 			$this->db->where('setting_key', $key)
-				->update('system_settings', ['setting_val' => $val, 'updated_at' => date('Y-m-d H:i:s')]);
+				->update('system_settings', ['setting_value' => $val, 'updated_at' => date('Y-m-d H:i:s')]);
 		} else {
 			$this->db->insert('system_settings', [
 				'setting_key' => $key,
-				'setting_val' => $val,
+				'setting_value' => $val,
 				'updated_at' => date('Y-m-d H:i:s'),
 			]);
 		}
@@ -80,7 +59,7 @@ class Settings_model extends CI_Model
 		$rows = $this->db->where('society_id', (int) $society_id)->get('society_settings')->result_array();
 		$out = [];
 		foreach ($rows as $r) {
-			$out[$r['setting_key']] = $r['setting_val'];
+			$out[$r['setting_key']] = $r['setting_value'];
 		}
 		return $out;
 	}
@@ -107,12 +86,12 @@ class Settings_model extends CI_Model
 			$this->db
 				->where('society_id', (int) $society_id)
 				->where('setting_key', $key)
-				->update('society_settings', ['setting_val' => $val, 'updated_at' => date('Y-m-d H:i:s')]);
+				->update('society_settings', ['setting_value' => $val, 'updated_at' => date('Y-m-d H:i:s')]);
 		} else {
 			$this->db->insert('society_settings', [
 				'society_id' => (int) $society_id,
 				'setting_key' => $key,
-				'setting_val' => $val,
+				'setting_value' => $val,
 				'updated_at' => date('Y-m-d H:i:s'),
 			]);
 		}

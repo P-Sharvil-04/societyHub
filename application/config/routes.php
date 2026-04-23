@@ -13,9 +13,7 @@ $route['verify_otp'] = 'usercontroller/verify_otp';
 $route['login'] = 'usercontroller/login';
 $route['logout'] = 'usercontroller/logout';
 
-$route['dashboard'] = 'usercontroller/dashboard';
 $route['residents'] = 'feature_controller/residents';
-$route['reports'] = 'feature_controller/reports';
 $route['add'] = 'usercontroller/add_expense';
 $route['save-expense'] = 'usercontroller/save_expense';
 
@@ -56,13 +54,17 @@ $route['amenity/export'] = 'aminity_controller/export';
 // $route['visitor/modal_edit/(:num)'] = 'visitor/modal_edit/$1';
 // $route['visitor/modal_delete/(:num)'] = 'visitor/modal_delete/$1';
 
-$route['visitors'] = 'visitor_controller/index';
+$route['visitors'] = 'visitor_controller/index/$1';
 $route['visitors/index'] = 'visitor_controller/index';
 $route['visitors/add'] = 'visitor_controller/add';
 $route['visitors/edit/(:num)'] = 'visitor_controller/edit/$1';
 $route['visitors/update'] = 'visitor_controller/update';
 $route['visitors/delete/(:num)'] = 'visitor_controller/delete/$1';
 $route['visitors/update-status'] = 'visitor_controller/update_status';
+// Approve and Reject (Owner actions)
+$route['visitors/approve/(:num)'] = 'visitor_controller/approve/$1';
+$route['visitors/reject/(:num)'] = 'visitor_controller/reject/$1';
+$route['visitors/checkout/(:num)'] = 'visitor_controller/checkout/$1';
 
 // $route['documents'] = 'document_controller/index';
 // // $route['documents'] = 'documents/index';
@@ -99,6 +101,7 @@ $route['parking/dashboard'] = 'parking_controller/dashboard';     // chairman
 $route['parking/assign'] = 'parking_controller/assign';        // POST: assign slot
 $route['parking/revoke/(:num)'] = 'parking_controller/revoke/$1';     // revoke by assignment id
 $route['parking/my_parking'] = 'parking_controller/my_parking';    // owner
+$route['parking/super_admin_dashboard'] = 'parking_controller/super_admin_dashboard';
 
 // $route['manage_member'] = 'members_controller/index';
 // $route['member'] = 'members_controller/save';
@@ -129,3 +132,11 @@ $route['society_setup/vacant_flats'] = 'society_setup/vacant_flats';
 
 
 $route['payments'] = 'payment_controllerr/payments';
+
+$route['dashboard'] = 'Dashboard_controller/index';
+
+$route['reports'] = 'Reports/index';
+
+$route['ai_insights'] = 'ai_insights/index';
+$route['ai_insights/chat'] = 'ai_insights/chat';
+$route['ai_insights/generate_report'] = 'ai_insights/generate_report';

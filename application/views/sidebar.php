@@ -303,27 +303,6 @@
 		$allowedMenus = (array) $allowedMenus;
 	}
 
-	// =====================================================================
-	// STEP 3 — Fetch society name FROM DATABASE based on logged-in user
-	//
-	//  How it works:
-	//  1. First checks if society data is already cached in session
-	//     (avoids a DB hit on every page load).
-	//  2. If not cached, reads the logged-in user's `society_id` from
-	//     session, then queries the `societies` table for that row.
-	//  3. Stores the result back in session for subsequent requests.
-	//  4. Falls back to config / hard-coded defaults if nothing is found.
-	//
-	//  Adjust table / column names below to match YOUR schema:
-	//    • societies table  → 'societies'
-	//    • name column      → 'society_name'
-	//    • tagline column   → 'society_tagline'   (or 'tagline', 'address', etc.)
-	//    • PK column        → 'id'
-	//
-	//  If your users table stores society_id directly, also adjust the
-	//  session key used to read it ('society_id' by default).
-	// =====================================================================
-	
 	$societyName = $CI->session->userdata('society_name');
 	$societyTagline = $CI->session->userdata('society_tagline');
 
@@ -536,7 +515,12 @@
 							<i class="fas fa-door-open"></i><span>Visitors</span>
 						</a>
 					<?php endif; ?>
-
+					<?php if (in_array('cctv', $allowedMenus)): ?>
+						<a href="<?= base_url('cctv') ?>" class="menu-item <?= ($activePage == 'cctv') ? 'active' : '' ?>">
+							<i class="fas fa-video"></i>
+							<span>CCTV</span>
+						</a>
+					<?php endif; ?>
 					<?php if (in_array('reports', $allowedMenus)): ?>
 						<a href="<?= base_url('reports') ?>"
 							class="menu-item <?= ($activePage == 'reports') ? 'active' : '' ?>">

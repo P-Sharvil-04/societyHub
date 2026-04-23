@@ -3,8 +3,6 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class events_booking_controller extends CI_Controller
 {
-	private $canManage = [];
-
 	public function __construct()
 	{
 		parent::__construct();
@@ -17,10 +15,10 @@ class events_booking_controller extends CI_Controller
 		}
 	}
 
-	/* ─── shared session helpers ─── */
+	/* ─── role helpers ──────────────────────────────────────────── */
 	private function _role()
 	{
-		return $this->session->userdata('role_name');
+		return (string) $this->session->userdata('role_name');
 	}
 	private function _society()
 	{
@@ -34,17 +32,25 @@ class events_booking_controller extends CI_Controller
 	{
 		return $this->_role() === 'super_admin';
 	}
+	private function _is_chairman()
+	{
+		return $this->_role() === 'chairman';
+	}
+	private function _is_resident()
+	{
+		return in_array($this->_role(), ['owner', 'tenant'], true);
+	}
 	private function _is_owner()
 	{
-		return in_array($this->_role(), ['chairman', 'secretary', 'committee_member', 'accountant', 'secretary', 'owner', 'tenant']);
+		return in_array($this->_role(), ['chairman', 'secretary', 'committee_member', 'accountant', 'owner', 'tenant'], true);
 	}
 	private function _can_approve()
 	{
-		return in_array($this->_role(), ['super_admin', 'chairman', 'secretary']);
+		return in_array($this->_role(), ['super_admin', 'chairman', 'secretary'], true);
 	}
 	private function _can_manage()
 	{
-		return in_array($this->_role(), ['super_admin', 'chairman', 'secretary']);
+		return in_array($this->_role(), ['super_admin', 'chairman', 'secretary'], true);
 	}
 
 	private function _society_id_filter()
@@ -54,9 +60,17 @@ class events_booking_controller extends CI_Controller
 			: $this->_society();
 	}
 
-	/* ════════════════════════════════════════════════════════════
-	 *  EVENTS — index
-	 * ════════════════════════════════════════════════════════════ */
+	private function _json($payload, $status = 200)
+	{
+		return $this->output
+			->set_status_header($status)
+			->set_content_type('application/json')
+			->set_output(json_encode($payload));
+	}
+
+	/* ═════════════════════════════════════════════════════════════
+	 *  EVENTS TAB
+	 * ═════════════════════════════════════════════════════════════ */
 	public function events()
 	{
 		$filters = [
@@ -69,25 +83,63 @@ class events_booking_controller extends CI_Controller
 		$societies = $this->_is_super() ? $this->Events_booking_model->get_societies() : [];
 		$recent_soc = $this->_is_super() ? null : $this->_society();
 
+		// Ensure every fund event has a QR token
+		$events = $this->Events_booking_model->get_events($filters);
+		foreach ($events as $e) {
+			if (!empty($e['fund_required']) && (float) ($e['fund_amount'] ?? 0) > 0 && empty($e['qr_token'])) {
+				$this->Events_booking_model->rotate_event_qr_token((int) $e['id']);
+			}
+		}
+
+		// Reload to get fresh tokens, then enrich per-user data
+		$events = $this->Events_booking_model->get_events($filters);
+		$user_id = $this->_user_id();
+
+		foreach ($events as &$e) {
+			$e['per_person_share'] = 0;
+			$e['user_has_paid'] = false;
+			$e['user_ticket_token'] = null;
+			$e['ticket_scanned'] = false;
+
+			if (!empty($e['fund_required']) && (float) $e['fund_amount'] > 0) {
+				$e['per_person_share'] = $this->Events_booking_model->calculate_per_person_share($e['id']);
+
+				if ($this->_is_resident()) {
+					$e['user_has_paid'] = $this->Events_booking_model->has_contributed($e['id'], $user_id);
+
+					if ($e['user_has_paid']) {
+						// Get (or lazily create) the ticket token
+						$e['user_ticket_token'] = $this->Events_booking_model->get_or_create_ticket_token($e['id'], $user_id);
+
+						// Check whether the chairman has already scanned this ticket
+						$contrib = $this->Events_booking_model->get_contribution($e['id'], $user_id);
+						$e['ticket_scanned'] = !empty($contrib['ticket_scanned']);
+					}
+				}
+			}
+		}
+		unset($e);
+
 		$data = [
 			'title' => 'Events & Bookings',
 			'activePage' => 'events_booking',
 			'tab' => 'events',
-			'events' => $this->Events_booking_model->get_events($filters),
+			'events' => $events,
 			'event_stats' => $this->Events_booking_model->get_event_stats($filters),
 			'recent_events' => $this->Events_booking_model->get_recent_events($recent_soc, 5),
 			'societies' => $societies,
 			'filters' => $filters,
 			'isSuperAdmin' => $this->_is_super(),
+			'isChairman' => $this->_is_chairman(),
 			'isOwner' => $this->_is_owner(),
+			'isResident' => $this->_is_resident(),
 			'canManage' => $this->_can_manage(),
 		];
-
+		
 		$this->load->view('header', $data);
 		$this->load->view('events_booking_view', $data);
 	}
 
-	/* ── save event ── */
 	public function save_event()
 	{
 		$this->form_validation->set_rules('title', 'Title', 'required|trim');
@@ -101,6 +153,7 @@ class events_booking_controller extends CI_Controller
 		}
 
 		$fund = (int) $this->input->post('fund_required');
+		$fund_amount = $fund ? (float) $this->input->post('fund_amount') : 0;
 
 		$d = [
 			'society_id' => $this->_is_super()
@@ -115,7 +168,7 @@ class events_booking_controller extends CI_Controller
 			'venue' => $this->input->post('venue', TRUE),
 			'status' => $this->input->post('status', TRUE),
 			'fund_required' => $fund,
-			'fund_amount' => $fund ? (float) $this->input->post('fund_amount') : 0,
+			'fund_amount' => $fund_amount,
 			'fund_status' => $fund ? ($this->input->post('fund_status') ?: 'open') : null,
 			'created_by' => $this->_user_id(),
 		];
@@ -125,6 +178,15 @@ class events_booking_controller extends CI_Controller
 			? $this->Events_booking_model->update_event($id, $d)
 			: $this->Events_booking_model->insert_event($d);
 
+		if ($ok) {
+			$event_id = $id ?: (int) $ok;
+			if ($fund && $fund_amount > 0) {
+				$this->Events_booking_model->rotate_event_qr_token($event_id);
+			} else {
+				$this->Events_booking_model->clear_event_qr_token($event_id);
+			}
+		}
+
 		$this->session->set_flashdata(
 			$ok ? 'success' : 'error',
 			$ok ? ($id ? 'Event updated.' : 'Event created.') : 'Operation failed.'
@@ -132,7 +194,6 @@ class events_booking_controller extends CI_Controller
 		redirect('events_booking_controller/events');
 	}
 
-	/* ── delete event ── */
 	public function delete_event($id)
 	{
 		$ok = $this->Events_booking_model->delete_event((int) $id);
@@ -140,48 +201,89 @@ class events_booking_controller extends CI_Controller
 		redirect('events_booking_controller/events');
 	}
 
-	/* ── contribute (owner pays fund) ── */
-	public function contribute()
+	/* ─── Chairman: scan the event-level QR ───────────────────────
+	 *
+	 *  Flow on each scan:
+	 *    1. Validate token exists
+	 *    2. Record scan (user + timestamp)
+	 *    3. Immediately rotate token → chairman's QR button stays live
+	 *    4. Show success flash
+	 *
+	 *  The chairman's QR button is ALWAYS shown in the view regardless of
+	 *  previous scan history.
+	 * ────────────────────────────────────────────────────────────── */
+	public function scan_event_qr($token = '')
 	{
-		if (!$this->_is_owner()) {
-			$this->session->set_flashdata('error', 'Only owners can contribute.');
+		if (!$this->_is_chairman()) {
+			$this->session->set_flashdata('error', 'Only the chairman can scan this QR.');
 			redirect('events_booking_controller/events');
 		}
 
-		$event_id = (int) $this->input->post('event_id');
-		$amount = (float) $this->input->post('amount');
-
-		if (!$event_id || $amount <= 0) {
-			$this->session->set_flashdata('error', 'Invalid amount.');
+		$token = trim((string) $token);
+		if ($token === '') {
+			$this->session->set_flashdata('error', 'Invalid QR token.');
 			redirect('events_booking_controller/events');
 		}
 
-		$user = $this->db->get_where('users', ['id' => $this->_user_id()])->row_array();
-		if (!$user) {
+		$event = $this->Events_booking_model->get_event_by_qr_token($token);
+		if (!$event) {
+			$this->session->set_flashdata('error', 'QR code expired or invalid. Refresh the page to get a new QR.');
 			redirect('events_booking_controller/events');
 		}
 
-		$ok = $this->Events_booking_model->add_contribution([
-			'event_id' => $event_id,
-			'society_id' => $user['society_id'] ?? null,
-			'user_id' => $this->_user_id(),
-			'user_name' => $user['name'],
-			'flat_no' => $user['flat_no'] ?? '',
-			'amount' => $amount,
-			'payment_status' => 'paid',
-			'paid_at' => date('Y-m-d H:i:s'),
-		]);
+		// Record scan + auto-rotate to a fresh token
+		$this->Events_booking_model->mark_event_qr_scanned((int) $event['id'], $this->_user_id());
 
 		$this->session->set_flashdata(
-			$ok ? 'success' : 'error',
-			$ok ? 'Contribution recorded. Thank you!' : 'Failed to record contribution.'
+			'success',
+			'✓ QR scanned for "' . $event['title'] . '". A new QR is ready for the next scan.'
 		);
 		redirect('events_booking_controller/events');
 	}
 
-	/* ════════════════════════════════════════════════════════════
-	 *  BOOKINGS — index
-	 * ════════════════════════════════════════════════════════════ */
+	/* ─── Chairman: scan a resident's entry ticket ─────────────────
+	 *
+	 *  Chairman can scan multiple different residents' tickets.
+	 *  If a ticket was already scanned, we warn but don't block
+	 *  (re-verification at the gate is a valid use case).
+	 * ────────────────────────────────────────────────────────────── */
+	public function scan_ticket($token)
+	{
+		if (!$this->_is_chairman()) {
+			$this->session->set_flashdata('error', 'Only the chairman can scan entry tickets.');
+			redirect('events_booking_controller/events');
+		}
+
+		$result = $this->Events_booking_model->scan_ticket($token);
+
+		if ($result === 'ok') {
+			$this->session->set_flashdata('success', '✓ Ticket validated. Resident may enter.');
+		} elseif ($result === 'already') {
+			$this->session->set_flashdata('success', 'ℹ This ticket was already scanned earlier — entry was previously granted.');
+		} else {
+			$this->session->set_flashdata('error', 'Invalid ticket QR. Please try again.');
+		}
+
+		redirect('events_booking_controller/events');
+	}
+
+	/* ─── Chairman: AJAX list of scanned/paid tickets for an event ─ */
+	public function get_scanned_tickets($event_id = 0)
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+		if (!$this->_is_chairman() && !$this->_can_manage()) {
+			return $this->_json(['success' => false, 'message' => 'Permission denied.']);
+		}
+
+		$tickets = $this->Events_booking_model->get_event_contributions((int) $event_id);
+		return $this->_json(['success' => true, 'tickets' => $tickets]);
+	}
+
+	/* ═════════════════════════════════════════════════════════════
+	 *  BOOKINGS TAB
+	 * ═════════════════════════════════════════════════════════════ */
 	public function bookings()
 	{
 		$filters = [
@@ -190,12 +292,11 @@ class events_booking_controller extends CI_Controller
 			'payment_status' => $this->input->get('payment_status', TRUE) ?: '',
 			'search' => $this->input->get('search', TRUE) ?: '',
 		];
-
-		if ($this->_is_owner()) {
+		if ($this->_is_resident()) {
 			$filters['user_id'] = $this->_user_id();
 		}
 
-		$logged_user = $this->_is_owner()
+		$logged_user = $this->_is_resident()
 			? $this->db->get_where('users', ['id' => $this->_user_id()])->row_array()
 			: null;
 
@@ -212,17 +313,18 @@ class events_booking_controller extends CI_Controller
 			'societies' => $societies,
 			'filters' => $filters,
 			'isSuperAdmin' => $this->_is_super(),
+			'isChairman' => $this->_is_chairman(),
 			'isOwner' => $this->_is_owner(),
+			'isResident' => $this->_is_resident(),
 			'canApprove' => $this->_can_approve(),
 			'canManage' => $this->_can_manage(),
 			'logged_user' => $logged_user,
+			'logged_user_id' => $this->_user_id(),
 		];
-
 		$this->load->view('header', $data);
 		$this->load->view('events_booking_view', $data);
 	}
 
-	/* ── save booking ── */
 	public function save_booking()
 	{
 		$this->form_validation->set_rules('area_name', 'Area Name', 'required|trim');
@@ -244,21 +346,12 @@ class events_booking_controller extends CI_Controller
 			? ((int) $this->input->post('society_id') ?: $this->_society())
 			: $this->_society();
 
-		if (
-			$this->Events_booking_model->check_clash(
-				$society_id,
-				$area_name,
-				$booking_date,
-				$start_time,
-				$end_time,
-				$booking_id ?: null
-			)
-		) {
+		if ($this->Events_booking_model->check_clash($society_id, $area_name, $booking_date, $start_time, $end_time, $booking_id ?: null)) {
 			$this->session->set_flashdata('error', "'{$area_name}' is already booked for that date and time slot.");
 			redirect('events_booking_controller/bookings');
 		}
 
-		if ($this->_is_owner()) {
+		if ($this->_is_resident()) {
 			$user = $this->db->get_where('users', ['id' => $this->_user_id()])->row_array();
 			$u_name = $user['name'] ?? '';
 			$u_flat = $user['flat_no'] ?? '';
@@ -279,7 +372,9 @@ class events_booking_controller extends CI_Controller
 			'end_time' => $end_time,
 			'amount' => (float) $this->input->post('amount') ?: 0,
 			'payment_status' => $this->input->post('payment_status', TRUE) ?: 'pending',
-			'status' => $this->_is_owner() ? 'pending' : ($this->input->post('status', TRUE) ?: 'pending'),
+			'status' => $this->_is_resident()
+				? 'pending'
+				: ($this->input->post('status', TRUE) ?: 'pending'),
 		];
 
 		$ok = $booking_id
@@ -293,7 +388,6 @@ class events_booking_controller extends CI_Controller
 		redirect('events_booking_controller/bookings');
 	}
 
-	/* ── delete booking ── */
 	public function delete_booking($id)
 	{
 		$ok = $this->Events_booking_model->delete_booking((int) $id);
@@ -301,68 +395,60 @@ class events_booking_controller extends CI_Controller
 		redirect('events_booking_controller/bookings');
 	}
 
-	/* ── approve / reject ── */
 	public function approve_booking($id)
 	{
 		if (!$this->_can_approve()) {
 			$this->session->set_flashdata('error', 'Permission denied.');
 			redirect('events_booking_controller/bookings');
 		}
-		$status = $this->input->post('status');
-		$ok = $this->Events_booking_model->approve_booking((int) $id, $status, $this->_user_id());
-		$this->session->set_flashdata($ok ? 'success' : 'error', $ok ? 'Booking ' . $status . '.' : 'Action failed.');
-		redirect('events_booking_controller/bookings');
-	}
 
-	/* ── mark paid ── */
-	public function pay_booking($id)
-	{
-		$booking = $this->Events_booking_model->get_booking_by_id((int) $id);
-		if ($this->_is_owner() && (!$booking || (int) $booking['user_id'] !== $this->_user_id())) {
-			$this->session->set_flashdata('error', 'Unauthorized.');
+		$status = $this->input->post('status', TRUE);
+		if (!in_array($status, ['approved', 'rejected'], true)) {
+			$this->session->set_flashdata('error', 'Invalid status.');
 			redirect('events_booking_controller/bookings');
 		}
-		$ok = $this->Events_booking_model->mark_booking_paid((int) $id);
-		$this->session->set_flashdata($ok ? 'success' : 'error', $ok ? 'Payment recorded.' : 'Failed to record payment.');
+
+		$ok = $this->Events_booking_model->approve_booking((int) $id, $status, $this->_user_id());
+		$this->session->set_flashdata(
+			$ok ? 'success' : 'error',
+			$ok ? 'Booking ' . $status . '.' : 'Action failed.'
+		);
 		redirect('events_booking_controller/bookings');
 	}
 
-	/* ════════════════════════════════════════════════════════════
-	 *  RAZORPAY — create order (AJAX, returns JSON)
-	 *
-	 *  POST params:
-	 *    amount  → amount in rupees (converted to paise internally)
-	 *    type    → 'booking' | 'contribution'
-	 *    ref_id  → booking_id or event_id
-	 * ════════════════════════════════════════════════════════════ */
+	/* ═════════════════════════════════════════════════════════════
+	 *  RAZORPAY
+	 * ═════════════════════════════════════════════════════════════ */
 	public function razorpay_create_order()
 	{
-		if (!$this->input->is_ajax_request()) {
+		if (!$this->input->is_ajax_request())
 			show_404();
-			return;
-		}
 
 		$amount = (float) $this->input->post('amount');
 		$type = $this->input->post('type', TRUE);
 		$ref_id = (int) $this->input->post('ref_id');
 
 		if ($amount <= 0 || !$type || !$ref_id) {
-			echo json_encode(['success' => false, 'message' => 'Invalid data.']);
-			return;
+			return $this->_json(['success' => false, 'message' => 'Invalid data.']);
 		}
 
-		// ── Razorpay credentials — store in application/config/razorpay.php ──
-		// $this->config->load('razorpay');
-		// $key_id     = $this->config->item('razorpay_key_id');
-		// $key_secret = $this->config->item('razorpay_key_secret');
-		$key_id = 'rzp_test_SQegebn7NHi2HZ';   // ← replace with your key
-		$key_secret = '6DHNi6FGHUTYpnrq9Zfzm78p';          // ← replace with your secret
+		if ($type === 'booking') {
+			$booking = $this->Events_booking_model->get_booking_by_id($ref_id);
+			if (!$booking || (int) $booking['user_id'] !== $this->_user_id()) {
+				return $this->_json(['success' => false, 'message' => 'Unauthorized.']);
+			}
+		}
 
-		// Amount in paise (Razorpay works in smallest currency unit)
+		$this->config->load('razorpay', TRUE);
+		$key_id = $this->config->item('razorpay_key_id', 'razorpay');
+		$key_secret = $this->config->item('razorpay_key_secret', 'razorpay');
+
+		if (!$key_id || !$key_secret) {
+			return $this->_json(['success' => false, 'message' => 'Razorpay keys not configured.']);
+		}
+
 		$amount_paise = (int) round($amount * 100);
-
 		$receipt = $type . '_' . $ref_id . '_' . time();
-
 		$payload = json_encode([
 			'amount' => $amount_paise,
 			'currency' => 'INR',
@@ -379,43 +465,26 @@ class events_booking_controller extends CI_Controller
 			CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
 			CURLOPT_SSL_VERIFYPEER => false,
 		]);
-
 		$response = curl_exec($ch);
 		$err = curl_error($ch);
 		curl_close($ch);
 
 		if ($err) {
-			echo json_encode(['success' => false, 'message' => 'cURL error: ' . $err]);
-			return;
+			return $this->_json(['success' => false, 'message' => 'cURL error: ' . $err]);
 		}
 
 		$order = json_decode($response, true);
-
 		if (!isset($order['id'])) {
-			echo json_encode(['success' => false, 'message' => $order['error']['description'] ?? 'Order creation failed.']);
-			return;
+			return $this->_json(['success' => false, 'message' => $order['error']['description'] ?? 'Order creation failed.']);
 		}
 
-		echo json_encode([
-			'success' => true,
-			'order_id' => $order['id'],
-			'amount' => $amount_paise,
-			'key_id' => $key_id,
-		]);
+		return $this->_json(['success' => true, 'order_id' => $order['id'], 'amount' => $amount_paise, 'key_id' => $key_id]);
 	}
 
-	/* ════════════════════════════════════════════════════════════
-	 *  RAZORPAY — verify payment signature + mark paid (POST)
-	 *
-	 *  POST params:
-	 *    razorpay_order_id, razorpay_payment_id, razorpay_signature,
-	 *    type   → 'booking' | 'contribution'
-	 *    ref_id → booking_id or event_id
-	 *    amount → original amount in rupees (for contribution insert)
-	 * ════════════════════════════════════════════════════════════ */
 	public function razorpay_verify()
 	{
-		$key_secret = '6DHNi6FGHUTYpnrq9Zfzm78p';  // ← same secret as above
+		$this->config->load('razorpay', TRUE);
+		$key_secret = $this->config->item('razorpay_key_secret', 'razorpay');
 
 		$order_id = $this->input->post('razorpay_order_id', TRUE);
 		$payment_id = $this->input->post('razorpay_payment_id', TRUE);
@@ -424,41 +493,101 @@ class events_booking_controller extends CI_Controller
 		$ref_id = (int) $this->input->post('ref_id');
 		$amount = (float) $this->input->post('amount');
 
-		// Verify signature: HMAC-SHA256 of "order_id|payment_id" using key_secret
-		$expected = hash_hmac('sha256', $order_id . '|' . $payment_id, $key_secret);
-
-		if (!hash_equals($expected, $signature)) {
-			$this->session->set_flashdata('error', 'Payment verification failed. Please contact support.');
-			redirect($type === 'booking'
-				? 'events_booking_controller/bookings'
-				: 'events_booking_controller/events');
+		if (!$order_id || !$payment_id || !$signature || !$type || !$ref_id || $amount <= 0) {
+			$this->session->set_flashdata('error', 'Payment verification data missing.');
+			redirect($type === 'booking' ? 'events_booking_controller/bookings' : 'events_booking_controller/events');
 		}
 
-		// Signature valid — mark as paid
+		$expected = hash_hmac('sha256', $order_id . '|' . $payment_id, $key_secret);
+		if (!hash_equals($expected, $signature)) {
+			$this->session->set_flashdata('error', 'Payment verification failed. Please contact support.');
+			redirect($type === 'booking' ? 'events_booking_controller/bookings' : 'events_booking_controller/events');
+		}
+
+		if ($this->Events_booking_model->payment_exists($payment_id)) {
+			$this->session->set_flashdata('success', 'Payment already recorded.');
+			redirect($type === 'booking' ? 'events_booking_controller/bookings' : 'events_booking_controller/events');
+		}
+
+		$user = $this->db->get_where('users', ['id' => $this->_user_id()])->row_array();
+
 		if ($type === 'booking') {
 			$booking = $this->Events_booking_model->get_booking_by_id($ref_id);
-			if ($this->_is_owner() && (!$booking || (int) $booking['user_id'] !== $this->_user_id())) {
+			if (!$booking || (int) $booking['user_id'] !== $this->_user_id()) {
 				$this->session->set_flashdata('error', 'Unauthorized.');
 				redirect('events_booking_controller/bookings');
 			}
 			$this->Events_booking_model->mark_booking_paid($ref_id);
+			$this->Events_booking_model->insert_payment([
+				'society_id' => $booking['society_id'] ?? $this->_society(),
+				'user_id' => $this->_user_id(),
+				'user_name' => $user['name'] ?? ($booking['user_name'] ?? ''),
+				'flat_no' => $user['flat_no'] ?? ($booking['flat_no'] ?? ''),
+				'reference_type' => 'booking',
+				'reference_id' => $ref_id,
+				'description' => 'Area Booking – ' . ($booking['area_name'] ?? ''),
+				'amount' => $amount,
+				'payment_method' => 'razorpay',
+				'razorpay_order_id' => $order_id,
+				'razorpay_payment_id' => $payment_id,
+				'razorpay_signature' => $signature,
+				'status' => 'paid',
+				'paid_at' => date('Y-m-d H:i:s'),
+			]);
 			$this->session->set_flashdata('success', 'Payment of ₹' . number_format($amount, 0) . ' received. Booking confirmed!');
 			redirect('events_booking_controller/bookings');
 
 		} else {
 			// contribution
-			$user = $this->db->get_where('users', ['id' => $this->_user_id()])->row_array();
+			if ($this->Events_booking_model->has_contributed($ref_id, $this->_user_id())) {
+				$this->session->set_flashdata('error', 'You have already contributed to this event.');
+				redirect('events_booking_controller/events');
+			}
+
+			$event = $this->Events_booking_model->get_event_by_id($ref_id);
+			if (!$event) {
+				$this->session->set_flashdata('error', 'Event not found.');
+				redirect('events_booking_controller/events');
+			}
+
+			$expected_share = $this->Events_booking_model->calculate_per_person_share($ref_id);
+			if (abs($amount - $expected_share) > 0.01) {
+				$this->session->set_flashdata('error', 'Contribution amount does not match the required share.');
+				redirect('events_booking_controller/events');
+			}
+
 			$this->Events_booking_model->add_contribution([
 				'event_id' => $ref_id,
 				'society_id' => $user['society_id'] ?? null,
 				'user_id' => $this->_user_id(),
-				'user_name' => $user['name'],
+				'user_name' => $user['name'] ?? '',
 				'flat_no' => $user['flat_no'] ?? '',
 				'amount' => $amount,
 				'payment_status' => 'paid',
 				'paid_at' => date('Y-m-d H:i:s'),
 			]);
-			$this->session->set_flashdata('success', 'Contribution of ₹' . number_format($amount, 0) . ' received. Thank you!');
+
+			// Generate ticket token immediately after contribution
+			$this->Events_booking_model->get_or_create_ticket_token($ref_id, $this->_user_id());
+
+			$this->Events_booking_model->insert_payment([
+				'society_id' => $user['society_id'] ?? $this->_society(),
+				'user_id' => $this->_user_id(),
+				'user_name' => $user['name'] ?? '',
+				'flat_no' => $user['flat_no'] ?? '',
+				'reference_type' => 'contribution',
+				'reference_id' => $ref_id,
+				'description' => 'Fund Contribution – ' . ($event['title'] ?? ''),
+				'amount' => $amount,
+				'payment_method' => 'razorpay',
+				'razorpay_order_id' => $order_id,
+				'razorpay_payment_id' => $payment_id,
+				'razorpay_signature' => $signature,
+				'status' => 'paid',
+				'paid_at' => date('Y-m-d H:i:s'),
+			]);
+
+			$this->session->set_flashdata('success', 'Contribution of ₹' . number_format($amount, 0) . ' received. Thank you! Check your ticket below.');
 			redirect('events_booking_controller/events');
 		}
 	}

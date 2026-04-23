@@ -22,7 +22,8 @@ $config['permissions'] = [
 		'aminities',
 		'reports',
 		'settings',
-		'society_setup'
+		'society_setup',
+		'cctv',
 		// 'events'
 
 	], // by default give all (we'll override below)
@@ -40,13 +41,14 @@ $config['permissions'] = [
 		'notices',
 		'flat_unit',
 		'parking',
-		'documents',
+		// 'documents',
 		'events',
 		'ai_insights',
 		'visitors',
 		'aminities',
 		'reports',
 		'settings',
+		'cctv',
 	],
 
 	'secretary' => [
@@ -57,7 +59,7 @@ $config['permissions'] = [
 		'staff',
 		'complaints',
 		'notices',
-		'documents',
+		// 'documents',
 		'events',
 		'parking'
 	],
@@ -84,7 +86,10 @@ $config['permissions'] = [
 		'notices',
 		'aminities',
 		'parking',
-		'events'
+		'events',
+		'settings',
+		'visitors',
+
 	],
 
 	'' => [
@@ -98,4 +103,10 @@ $config['permissions'] = [
 		'parking',
 		'events'
 	],
+
+	'security' => [
+		'visitors',
+		'settings',
+		'cctv',
+	]
 ];

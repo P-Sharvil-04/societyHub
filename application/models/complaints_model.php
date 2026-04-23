@@ -10,17 +10,13 @@ class complaints_model extends CI_Model
 	}
 
 	/* ══════════════════════════════════════
-	 *  FETCH — MULTIPLE RECORDS
+	 *  FETCH — MULTIPLE RECORDS (with pagination)
 	 * ══════════════════════════════════════ */
 
 	/**
-	 * All complaints with backend filters.
-	 * society_id  → scope to one society (pass '' or null for all)
-	 * status      → filter by status
-	 * category    → filter by category
-	 * search      → LIKE on complaint_id, user_name, flat, title
+	 * All complaints with backend filters + pagination.
 	 */
-	public function get_filtered($filters = [])
+	public function get_filtered($filters = [], $limit = null, $offset = 0)
 	{
 		$this->db
 			->select('complaints.*, societies.name AS society_name')
@@ -46,15 +42,48 @@ class complaints_model extends CI_Model
 				->group_end();
 		}
 
-		return $this->db
-			->order_by('complaints.created_at', 'DESC')
-			->get()->result_array();
+		$this->db->order_by('complaints.created_at', 'DESC');
+
+		if ($limit !== null) {
+			$this->db->limit($limit, $offset);
+		}
+
+		return $this->db->get()->result_array();
 	}
 
 	/**
-	 * Owner's own complaints (+ optional status/category/search filter).
+	 * Count total records for filtered query (pagination).
 	 */
-	public function get_by_user($user_id, $filters = [])
+	public function count_filtered($filters = [])
+	{
+		$this->db->from('complaints');
+
+		if (!empty($filters['society_id'])) {
+			$this->db->where('complaints.society_id', (int) $filters['society_id']);
+		}
+		if (!empty($filters['status'])) {
+			$this->db->where('complaints.status', $filters['status']);
+		}
+		if (!empty($filters['category'])) {
+			$this->db->where('complaints.category', $filters['category']);
+		}
+		if (!empty($filters['search'])) {
+			$s = $filters['search'];
+			$this->db->group_start()
+				->like('complaints.complaint_id', $s)
+				->or_like('complaints.user_name', $s)
+				->or_like('complaints.flat', $s)
+				->or_like('complaints.title', $s)
+				->group_end();
+		}
+
+		return $this->db->count_all_results();
+	}
+
+	/**
+	 * Owner's own complaints (+ optional filters + pagination).
+	 */
+	public function get_by_user($user_id, $filters = [], $limit = null, $offset = 0)
 	{
 		$this->db
 			->select('complaints.*, societies.name AS society_name')
@@ -76,9 +105,37 @@ class complaints_model extends CI_Model
 				->group_end();
 		}
 
-		return $this->db
-			->order_by('complaints.created_at', 'DESC')
-			->get()->result_array();
+		$this->db->order_by('complaints.created_at', 'DESC');
+
+		if ($limit !== null) {
+			$this->db->limit($limit, $offset);
+		}
+
+		return $this->db->get()->result_array();
+	}
+
+	/**
+	 * Count owner's complaints (for pagination).
+	 */
+	public function count_by_user($user_id, $filters = [])
+	{
+		$this->db->from('complaints')->where('user_id', (int) $user_id);
+
+		if (!empty($filters['status'])) {
+			$this->db->where('status', $filters['status']);
+		}
+		if (!empty($filters['category'])) {
+			$this->db->where('category', $filters['category']);
+		}
+		if (!empty($filters['search'])) {
+			$s = $filters['search'];
+			$this->db->group_start()
+				->like('complaint_id', $s)
+				->or_like('title', $s)
+				->group_end();
+		}
+
+		return $this->db->count_all_results();
 	}
 
 	/* ══════════════════════════════════════
@@ -123,9 +180,6 @@ class complaints_model extends CI_Model
 	 *  STATS
 	 * ══════════════════════════════════════ */
 
-	/**
-	 * Stats for admins — pass society_id to scope, null for all.
-	 */
 	public function get_stats($society_id = null)
 	{
 		$w = function () use ($society_id) {
@@ -151,9 +205,6 @@ class complaints_model extends CI_Model
 		return compact('total', 'pending', 'in_progress', 'resolved', 'closed');
 	}
 
-	/**
-	 * Stats scoped to a single owner.
-	 */
 	public function get_stats_by_user($user_id)
 	{
 		$w = function () use ($user_id) {
@@ -182,18 +233,11 @@ class complaints_model extends CI_Model
 	 *  USERS / MEMBERS
 	 * ══════════════════════════════════════ */
 
-	/**
-	 * Get a single user by id (used to pre-fill owner info).
-	 */
 	public function get_user_by_id($id)
 	{
 		return $this->db->get_where('users', ['id' => (int) $id])->row_array();
 	}
 
-	/**
-	 * Owner-role members list for admin add/edit dropdown.
-	 * Pass society_id to restrict to one society; null = all societies.
-	 */
 	public function get_members($society_id = null)
 	{
 		$this->db

@@ -1,6 +1,15 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
+/**
+ * Payment_model
+ *
+ * Aggregates 4 real payment sources into one unified shape:
+ *   1. payments          – maintenance / Razorpay fees
+ *   2. event_contributions – owner contributions to society events
+ *   3. bookings          – area / facility booking fees
+ *   4. penalties         – admin-raised penalty charges
+ */
 class Payment_model extends CI_Model
 {
 	public function __construct()
@@ -8,255 +17,405 @@ class Payment_model extends CI_Model
 		parent::__construct();
 	}
 
-	// ─── AGGREGATED: All payments from all sources ───────────────────────────
+	// =========================================================================
+	// PUBLIC API
+	// =========================================================================
 
 	/**
-	 * Returns unified payment records from:
-	 *  - payments (manual / maintenance)
-	 *  - event_contributions
-	 *  - amenity_bookings
+	 * Unified list from all 4 sources, sorted newest first.
 	 *
-	 * Each row is normalised so the view always gets the same keys.
+	 * $filters (all optional):
+	 *   society_id – scope to one society
+	 *   user_id    – single resident history
+	 *   status     – 'paid' | 'pending' | 'waived'
+	 *   month      – '01'–'12'
 	 */
 	public function get_all_unified_payments($filters = [])
 	{
-		$rows = [];
+		$rows = array_merge(
+			$this->_get_maintenance_payments($filters),
+			$this->_get_event_contributions($filters),
+			$this->_get_booking_payments($filters)
+		);
 
-		// 1. Core payments (maintenance, water, electricity, etc.)
-		$rows = array_merge($rows, $this->_get_core_payments($filters));
-
-		// 2. Event contributions
-		$rows = array_merge($rows, $this->_get_event_contributions($filters));
-
-		// 3. Amenity / facility bookings
-		$rows = array_merge($rows, $this->_get_booking_payments($filters));
-
-		// Sort by transaction date descending
 		usort($rows, function ($a, $b) {
-			return strtotime($b['payment_date'] ?: $b['due_date'])
-				- strtotime($a['payment_date'] ?: $a['due_date']);
+			$da = $a['payment_date'] ?: ($a['due_date'] ?: '1970-01-01');
+			$db = $b['payment_date'] ?: ($b['due_date'] ?: '1970-01-01');
+			return strtotime($db) - strtotime($da);
 		});
 
 		return $rows;
 	}
 
-	// ─── SUMMARY STATS ───────────────────────────────────────────────────────
-
-	public function get_summary_stats()
+	private function _get_maintenance_payments($filters = [])
 	{
-		$all = $this->get_all_unified_payments();
+		$this->db->select(
+			'p.id,
+		 CONCAT("PAY-", LPAD(p.id, 4, "0")) AS invoice_id,
+		 p.user_id AS resident_id,
+		 IFNULL(u.name, "Unknown") AS resident_name,
+		 IFNULL(u.flat_no, "-") AS flat,
+		 "Maintenance" AS payment_type,
+		 p.amount,
+		 DATE(p.payment_date) AS payment_date,
+		 CONCAT(IFNULL(p.month, ""), " ", IFNULL(p.year, "")) AS due_date,
+		 CASE WHEN p.payment_id IS NOT NULL THEN "Razorpay" ELSE "Manual" END AS payment_method,
+		 IFNULL(p.payment_id, IFNULL(p.order_id, "")) AS transaction_id,
+		 CONCAT("Maintenance – ", IFNULL(p.month, ""), " ", IFNULL(p.year, "")) AS description,
+		 p.status,
+		 "maintenance" AS source_type',
+			false
+		);
+		$this->db->from('payments p');
+		$this->db->join('users u', 'u.id = p.user_id', 'left');
 
-		$stats = [
+		if (!empty($filters['society_id']))
+			$this->db->where('p.society_id', $filters['society_id']);
+		if (!empty($filters['user_id']))
+			$this->db->where('p.user_id', $filters['user_id']);
+		if (!empty($filters['status']))
+			$this->db->where('p.status', $filters['status']);
+		if (!empty($filters['month']))
+			$this->db->where('p.month', $filters['month']);
+
+		return array_map([$this, '_normalise'], $this->db->get()->result_array());
+	}
+
+	/** Stats for the four summary cards */
+	public function get_summary_stats($society_id = null)
+	{
+		$filters = $society_id ? ['society_id' => $society_id] : [];
+		$all = $this->get_all_unified_payments($filters);
+
+		$s = [
 			'total_collected' => 0,
 			'pending_amount' => 0,
 			'overdue_amount' => 0,
+			'paid_count' => 0,
 			'pending_count' => 0,
 			'overdue_count' => 0,
-			'paid_count' => 0,
 			'total_count' => count($all),
 		];
 
 		foreach ($all as $p) {
-			if ($p['status'] === 'paid') {
-				$stats['total_collected'] += $p['amount'];
-				$stats['paid_count']++;
+			if (in_array($p['status'], ['paid', 'waived'])) {
+				$s['total_collected'] += $p['amount'];
+				$s['paid_count']++;
 			} elseif ($p['status'] === 'pending') {
-				$stats['pending_amount'] += $p['amount'];
-				$stats['pending_count']++;
+				$s['pending_amount'] += $p['amount'];
+				$s['pending_count']++;
 			} elseif ($p['status'] === 'overdue') {
-				$stats['overdue_amount'] += $p['amount'];
-				$stats['overdue_count']++;
+				$s['overdue_amount'] += $p['amount'];
+				$s['overdue_count']++;
 			}
 		}
 
-		$stats['collection_rate'] = $stats['total_count'] > 0
-			? round(($stats['paid_count'] / $stats['total_count']) * 100)
-			: 0;
+		$s['collection_rate'] = $s['total_count'] > 0
+			? round(($s['paid_count'] / $s['total_count']) * 100) : 0;
 
-		return $stats;
+		return $s;
 	}
 
-	// ─── CHART DATA (last 6 months) ──────────────────────────────────────────
-
-	public function get_chart_data()
+	/** Bar chart data – last 6 months */
+	public function get_chart_data($society_id = null)
 	{
-		$all = $this->get_all_unified_payments();
+		$filters = $society_id ? ['society_id' => $society_id] : [];
+		$all = $this->get_all_unified_payments($filters);
 		$result = [];
 
 		for ($i = 5; $i >= 0; $i--) {
 			$ts = strtotime("-{$i} months");
 			$month = (int) date('n', $ts);
 			$year = (int) date('Y', $ts);
-			$label = date('M y', $ts);
-
 			$paid = 0;
 			$pending = 0;
 
 			foreach ($all as $p) {
-				$dateStr = $p['status'] === 'paid' ? $p['payment_date'] : $p['due_date'];
-				if (!$dateStr)
+				$ds = $p['payment_date'] ?: $p['due_date'];
+				if (!$ds)
 					continue;
-
-				$d = new DateTime($dateStr);
-				if ((int) $d->format('n') === $month && (int) $d->format('Y') === $year) {
-					if ($p['status'] === 'paid') {
-						$paid += $p['amount'];
-					} elseif (in_array($p['status'], ['pending', 'overdue'])) {
-						$pending += $p['amount'];
-					}
-				}
+				$d = new DateTime($ds);
+				if ((int) $d->format('n') !== $month || (int) $d->format('Y') !== $year)
+					continue;
+				if (in_array($p['status'], ['paid', 'waived']))
+					$paid += $p['amount'];
+				else
+					$pending += $p['amount'];
 			}
-
-			$result[] = [
-				'label' => $label,
-				'paid' => $paid,
-				'pending' => $pending,
-			];
+			$result[] = ['label' => date('M y', $ts), 'paid' => $paid, 'pending' => $pending];
 		}
-
 		return $result;
 	}
 
-	// ─── TRANSACTION HISTORY for a specific resident / user ─────────────────
-	// event_contributions stores user_id — filter is mapped per-source internally.
-	// A secondary PHP filter ensures cross-source accuracy.
-
-	public function get_resident_transaction_history($user_id)
+	/** All transactions for one user across every source */
+	public function get_user_history($user_id, $society_id = null)
 	{
-		$all = $this->get_all_unified_payments(['resident_id' => $user_id]);
-
-		return array_values(array_filter($all, function ($p) use ($user_id) {
-			return (string) $p['resident_id'] === (string) $user_id;
-		}));
+		$f = ['user_id' => $user_id];
+		if ($society_id)
+			$f['society_id'] = $society_id;
+		return $this->get_all_unified_payments($f);
 	}
 
-	// ─── SOURCE: Core payments table ─────────────────────────────────────────
-
-	private function _get_core_payments($filters = [])
+	/** Users list for "Record Payment" dropdown (owners + tenants only) */
+	public function get_users_list($society_id = null)
 	{
-		// Expected table: payments
-		// Columns: id, invoice_id, resident_id, resident_name, flat_number,
-		//          payment_type, amount, payment_date, due_date, payment_method,
-		//          transaction_id, description, status, created_at
-		$this->db->select(
-			'id, invoice_id, resident_id, resident_name, flat_number AS flat,
-             payment_type, amount, payment_date, due_date, payment_method,
-             transaction_id, description, status, "maintenance" AS source_type'
-		);
-		$this->db->from('payments');
-
-		$this->_apply_filters($filters, 'payment_date', 'resident_id', 'status');
-
-		$query = $this->db->get();
-		$rows = $query->result_array();
-
-		return array_map([$this, '_normalise'], $rows);
+		$this->db->select('id, name, flat_no, member_type');
+		$this->db->from('users');
+		$this->db->where('status', 1);
+		if ($society_id)
+			$this->db->where('society_id', $society_id);
+		$this->db->order_by('name', 'ASC');
+		return $this->db->get()->result_array();
 	}
 
-	// ─── SOURCE: Event contributions ─────────────────────────────────────────
-	//
-	// Actual schema (event_contributions):
-	//   id, event_id, society_id, user_id, user_name, flat_no,
-	//   amount, payment_status, paid_at, created_at
-	//
-	// Note: user_name & flat_no are stored directly — no residents join needed.
-	// payment_status values: 'paid' (matches our normalised 'status').
-	// paid_at is the payment datetime; we use created_at as fallback due_date.
+	// ─── CRUD: payments table (admin manual maintenance entry) ───────────────
 
+	public function insert_payment($data)
+	{
+		$data['created_at'] = date('Y-m-d H:i:s');
+		$this->db->insert('payments', $data);
+		return $this->db->insert_id();
+	}
+
+	public function update_payment($id, $data)
+	{
+		$this->db->where('id', $id);
+		return $this->db->update('payments', $data);
+	}
+
+	public function delete_payment($id)
+	{
+		$this->db->where('id', $id);
+		return $this->db->delete('payments');
+	}
+
+	public function get_payment_by_id($id)
+	{
+		$this->db->select('p.*, u.name AS uname, u.flat_no AS uflatno');
+		$this->db->from('payments p');
+		$this->db->join('users u', 'u.id = p.user_id', 'left');
+		$this->db->where('p.id', $id);
+		$row = $this->db->get()->row_array();
+		if (!$row)
+			return null;
+
+		return $this->_normalise([
+			'id' => $row['id'],
+			'invoice_id' => 'PAY-' . str_pad($row['id'], 4, '0', STR_PAD_LEFT),
+			'resident_id' => $row['user_id'],
+			'resident_name' => $row['uname'] ?? 'Unknown',
+			'flat' => $row['uflatno'] ?? '-',
+			'payment_type' => ucfirst($row['payment_type'] ?? 'Maintenance'),
+			'amount' => $row['amount'],
+			'payment_date' => $row['payment_date'] ? date('Y-m-d', strtotime($row['payment_date'])) : '',
+			'due_date' => $row['created_at'] ? date('Y-m-d', strtotime($row['created_at'])) : '',
+			'payment_method' => $row['payment_id'] ? 'Razorpay' : 'Manual',
+			'transaction_id' => $row['payment_id'] ?? ($row['order_id'] ?? ''),
+			'description' => ucfirst($row['payment_type'] ?? '') . ' – ' . ($row['month'] ?? '') . ' ' . ($row['year'] ?? ''),
+			'status' => $row['status'],
+			'source_type' => 'maintenance',
+		]);
+	}
+
+	// =========================================================================
+	// PRIVATE SOURCES
+	// =========================================================================
+
+	/**
+	 * SOURCE 1: payments table
+	 *
+	 * Real columns:
+	 *   id, society_id, user_id, amount, payment_type ENUM(maintenance|penalty),
+	 *   month VARCHAR(10), year INT, status ENUM(pending|paid),
+	 *   created_by, payment_date DATETIME, order_id, payment_id, created_at, receipt
+	 */
+	// private function _get_maintenance_payments($filters = [])
+	// {
+	//     $this->db->select(
+	//         'p.id,
+	//          CONCAT("PAY-", LPAD(p.id, 4, "0"))   AS invoice_id,
+	//          p.user_id                              AS resident_id,
+	//          IFNULL(u.name, "Unknown")             AS resident_name,
+	//          IFNULL(u.flat_no, "-")                AS flat,
+	//          IFNULL(UPPER(LEFT(p.payment_type,1)),
+	//              "M"), LOWER(SUBSTRING(p.payment_type,2)) AS _dummy,
+	//          CASE
+	//              WHEN p.payment_type = "maintenance" THEN "Maintenance"
+	//              WHEN p.payment_type = "penalty"     THEN "Penalty"
+	//              ELSE "Maintenance"
+	//          END                                   AS payment_type,
+	//          p.amount,
+	//          DATE(p.payment_date)                  AS payment_date,
+	//          DATE(p.created_at)                    AS due_date,
+	//          CASE
+	//              WHEN p.payment_id IS NOT NULL THEN "Razorpay"
+	//              ELSE "Manual"
+	//          END                                   AS payment_method,
+	//          IFNULL(p.payment_id, IFNULL(p.order_id, "")) AS transaction_id,
+	//          CONCAT(
+	//              CASE WHEN p.payment_type="maintenance" THEN "Maintenance"
+	//                   WHEN p.payment_type="penalty"     THEN "Penalty"
+	//                   ELSE "Maintenance" END,
+	//              IF(p.month IS NOT NULL AND p.month != "",
+	//                 CONCAT(" – ", p.month, " ", IFNULL(p.year, "")), "")
+	//          )                                     AS description,
+	//          p.status,
+	//          "maintenance"                         AS source_type'
+	//     );
+	//     $this->db->from('payments p');
+	//     $this->db->join('users u', 'u.id = p.user_id', 'left');
+
+	//     if (!empty($filters['society_id'])) $this->db->where('p.society_id', $filters['society_id']);
+	//     if (!empty($filters['user_id']))    $this->db->where('p.user_id',    $filters['user_id']);
+	//     if (!empty($filters['status']))     $this->db->where('p.status',     $filters['status']);
+	//     if (!empty($filters['month']))      $this->db->where('p.month',      $filters['month']);
+
+	//     return array_map([$this, '_normalise'], $this->db->get()->result_array());
+	// }
+
+	/**
+	 * SOURCE 2: event_contributions
+	 *
+	 * Real columns:
+	 *   id, event_id, society_id, user_id, user_name VARCHAR(255),
+	 *   flat_no VARCHAR(50), amount, payment_status VARCHAR(50) DEFAULT 'paid',
+	 *   paid_at DATETIME, created_at DATETIME
+	 *
+	 * Joined: events (id, title, event_date)
+	 */
 	private function _get_event_contributions($filters = [])
 	{
 		$this->db->select(
 			'ec.id,
-             CONCAT("EVT-", LPAD(ec.id, 4, "0")) AS invoice_id,
-             ec.user_id                           AS resident_id,
-             ec.user_name                         AS resident_name,
-             IFNULL(ec.flat_no, "-")              AS flat,
-             CONCAT("Event: ", IFNULL(e.event_name, CONCAT("Event #", ec.event_id))) AS payment_type,
+             CONCAT("EVT-", LPAD(ec.id, 4, "0"))  AS invoice_id,
+             ec.user_id                             AS resident_id,
+             ec.user_name                           AS resident_name,
+             IFNULL(ec.flat_no, "-")               AS flat,
+             CONCAT("Event: ", IFNULL(e.title,
+                 CONCAT("Event #", ec.event_id)))  AS payment_type,
              ec.amount,
-             DATE(ec.paid_at)                     AS payment_date,
-             DATE(ec.created_at)                  AS due_date,
-             ""                                   AS payment_method,
-             ""                                   AS transaction_id,
-             CONCAT(
-                 "Contribution for: ",
-                 IFNULL(e.event_name, CONCAT("Event #", ec.event_id))
-             )                                    AS description,
-             ec.payment_status                    AS status,
-             "event"                              AS source_type'
+             DATE(ec.paid_at)                       AS payment_date,
+             DATE(e.event_date)                     AS due_date,
+             ""                                     AS payment_method,
+             ""                                     AS transaction_id,
+             CONCAT("Contribution – ",
+                 IFNULL(e.title, CONCAT("Event #", ec.event_id))) AS description,
+             ec.payment_status                      AS status,
+             "event"                                AS source_type'
 		);
 		$this->db->from('event_contributions ec');
 		$this->db->join('events e', 'e.id = ec.event_id', 'left');
 
-		// Filter by user_id (maps to resident_id in unified layer)
-		if (!empty($filters['resident_id'])) {
-			$this->db->where('ec.user_id', $filters['resident_id']);
-		}
-		// Filter by society if scoped login is active
-		if (!empty($filters['society_id'])) {
+		if (!empty($filters['society_id']))
 			$this->db->where('ec.society_id', $filters['society_id']);
-		}
-		// payment_status filter — map generic 'paid'/'pending' to table column
-		if (!empty($filters['status'])) {
+		if (!empty($filters['user_id']))
+			$this->db->where('ec.user_id', $filters['user_id']);
+		if (!empty($filters['status']))
 			$this->db->where('ec.payment_status', $filters['status']);
-		}
-		// Month filter against paid_at (falls back to created_at)
-		if (!empty($filters['month'])) {
+		if (!empty($filters['month']))
 			$this->db->where('MONTH(IFNULL(ec.paid_at, ec.created_at))', $filters['month']);
-		}
 
-		$query = $this->db->get();
-		$rows = $query->result_array();
-
-		return array_map([$this, '_normalise'], $rows);
+		return array_map([$this, '_normalise'], $this->db->get()->result_array());
 	}
 
-	// ─── SOURCE: Amenity / facility bookings ────────────────────────────────
-
+	/**
+	 * SOURCE 3: bookings
+	 *
+	 * Real columns:
+	 *   id, society_id, user_id, user_name VARCHAR(255), flat_no VARCHAR(50),
+	 *   area_name VARCHAR(255), purpose VARCHAR(255), booking_date DATE,
+	 *   start_time TIME, end_time TIME, amount DECIMAL(10,2),
+	 *   payment_status ENUM(pending|paid|waived),
+	 *   status ENUM(pending|approved|rejected),
+	 *   approved_by INT, approved_at DATETIME, created_at, updated_at
+	 *
+	 * Note: payment_status and booking status are SEPARATE columns.
+	 * We track payment_status only.
+	 */
 	private function _get_booking_payments($filters = [])
 	{
-		// Expected tables: amenity_bookings, amenities, residents
-		// Columns assumed: ab.id, a.name AS amenity_name, ab.resident_id,
-		//   r.name AS resident_name, r.flat_number, ab.booking_fee AS amount,
-		//   ab.paid_on AS payment_date, ab.booking_date AS due_date,
-		//   ab.payment_method, ab.transaction_id, ab.status, ab.created_at
 		$this->db->select(
-			'ab.id,
-             CONCAT("BKG-", LPAD(ab.id, 3, "0")) AS invoice_id,
-             ab.resident_id,
-             IFNULL(r.name, "Unknown") AS resident_name,
-             IFNULL(r.flat_number, "-") AS flat,
-             CONCAT("Booking: ", a.name) AS payment_type,
-             ab.booking_fee AS amount,
-             ab.paid_on AS payment_date,
-             ab.booking_date AS due_date,
-             ab.payment_method,
-             ab.transaction_id,
-             CONCAT("Amenity booking: ", a.name, " on ", DATE_FORMAT(ab.booking_date, "%d %b %Y")) AS description,
-             ab.status,
-             "booking" AS source_type'
+			'b.id,
+             CONCAT("BKG-", LPAD(b.id, 4, "0"))   AS invoice_id,
+             b.user_id                              AS resident_id,
+             b.user_name                            AS resident_name,
+             IFNULL(b.flat_no, "-")                AS flat,
+             CONCAT("Booking: ", b.area_name)       AS payment_type,
+             b.amount,
+             DATE(IFNULL(b.approved_at, b.updated_at)) AS payment_date,
+             b.booking_date                         AS due_date,
+             ""                                     AS payment_method,
+             ""                                     AS transaction_id,
+             CONCAT(b.area_name,
+                 IF(b.purpose IS NOT NULL,
+                    CONCAT(" – ", b.purpose), ""),
+                 " on ",
+                 DATE_FORMAT(b.booking_date, "%d %b %Y")) AS description,
+             b.payment_status                       AS status,
+             "booking"                              AS source_type'
 		);
-		$this->db->from('amenity_bookings ab');
-		$this->db->join('amenities a', 'a.id = ab.amenity_id', 'left');
-		$this->db->join('residents r', 'r.id = ab.resident_id', 'left');
+		$this->db->from('bookings b');
 
-		if (!empty($filters['resident_id'])) {
-			$this->db->where('ab.resident_id', $filters['resident_id']);
-		}
-		if (!empty($filters['status'])) {
-			$this->db->where('ab.status', $filters['status']);
-		}
-		if (!empty($filters['month'])) {
-			$this->db->where('MONTH(IFNULL(ab.paid_on, ab.booking_date))', $filters['month']);
-		}
+		if (!empty($filters['society_id']))
+			$this->db->where('b.society_id', $filters['society_id']);
+		if (!empty($filters['user_id']))
+			$this->db->where('b.user_id', $filters['user_id']);
+		if (!empty($filters['status']))
+			$this->db->where('b.payment_status', $filters['status']);
+		if (!empty($filters['month']))
+			$this->db->where('MONTH(b.booking_date)', $filters['month']);
 
-		$query = $this->db->get();
-		$rows = $query->result_array();
-
-		return array_map([$this, '_normalise'], $rows);
+		return array_map([$this, '_normalise'], $this->db->get()->result_array());
 	}
 
-	// ─── NORMALISE row to a standard shape ───────────────────────────────────
+	/**
+	 * SOURCE 4: penalties
+	 *
+	 * Real columns:
+	 *   id, society_id, user_id, reason VARCHAR(255), amount DECIMAL(10,2),
+	 *   created_by INT, status ENUM(unpaid|paid), created_at TIMESTAMP
+	 *
+	 * We normalise: unpaid → pending  so the view has consistent statuses.
+	 */
+	// private function _get_penalties($filters = [])
+	// {
+	//     // Map incoming 'pending' filter → 'unpaid' for this table
+	//     $statusFilter = null;
+	//     if (!empty($filters['status'])) {
+	//         $map = ['pending' => 'unpaid', 'paid' => 'paid'];
+	//         $statusFilter = $map[$filters['status']] ?? null;
+	//     }
 
+	//     $this->db->select(
+	//         'pen.id,
+	//          CONCAT("PEN-", LPAD(pen.id, 4, "0"))  AS invoice_id,
+	//          pen.user_id                             AS resident_id,
+	//          IFNULL(u.name, "Unknown")              AS resident_name,
+	//          IFNULL(u.flat_no, "-")                 AS flat,
+	//          "Penalty"                               AS payment_type,
+	//          pen.amount,
+	//          CASE WHEN pen.status = "paid"
+	//               THEN DATE(pen.created_at) ELSE "" END AS payment_date,
+	//          DATE(pen.created_at)                    AS due_date,
+	//          ""                                      AS payment_method,
+	//          ""                                      AS transaction_id,
+	//          IFNULL(pen.reason, "Penalty charge")    AS description,
+	//          CASE WHEN pen.status = "unpaid"
+	//               THEN "pending" ELSE "paid" END     AS status,
+	//          "penalty"                               AS source_type'
+	//     );
+	//     $this->db->from('penalties pen');
+	//     $this->db->join('users u', 'u.id = pen.user_id', 'left');
+
+	//     if (!empty($filters['society_id'])) $this->db->where('pen.society_id', $filters['society_id']);
+	//     if (!empty($filters['user_id']))    $this->db->where('pen.user_id',    $filters['user_id']);
+	//     if ($statusFilter)                  $this->db->where('pen.status',     $statusFilter);
+	//     if (!empty($filters['month']))      $this->db->where('MONTH(pen.created_at)', $filters['month']);
+
+	//     return array_map([$this, '_normalise'], $this->db->get()->result_array());
+	// }
+
+	// ─── Normalise every row to the same shape ────────────────────────────────
 	private function _normalise($row)
 	{
 		return [
@@ -276,67 +435,52 @@ class Payment_model extends CI_Model
 			'source_type' => $row['source_type'] ?? 'maintenance',
 		];
 	}
-
-	// ─── HELPER: apply common query filters ──────────────────────────────────
-
-	private function _apply_filters($filters, $date_col, $resident_col, $status_col)
+	public function get_maintenance_amount(int $societyId, string $flatNo = null): float
 	{
-		if (!empty($filters['resident_id'])) {
-			$this->db->where($resident_col, $filters['resident_id']);
+		// Option 1: from society_settings (global amount for society)
+		$this->db->select('setting_value')
+			->from('society_settings')
+			->where('society_id', $societyId)
+			->where('setting_key', 'maintenance_amount')
+			->limit(1);
+		$row = $this->db->get()->row_array();
+		if ($row && is_numeric($row['setting_value'])) {
+			return (float) $row['setting_value'];
 		}
-		if (!empty($filters['status'])) {
-			$this->db->where($status_col, $filters['status']);
+
+		// Option 2: from flats table (if each flat has its own amount)
+		if ($flatNo) {
+			$this->db->select('maintenance_amount')
+				->from('flats')
+				->where('society_id', $societyId)
+				->where('flat_no', $flatNo)
+				->limit(1);
+			$row = $this->db->get()->row_array();
+			if ($row && isset($row['maintenance_amount'])) {
+				return (float) $row['maintenance_amount'];
+			}
 		}
-		if (!empty($filters['month'])) {
-			$this->db->where("MONTH({$date_col})", $filters['month']);
+
+		// Default if not set
+		return 0;
+	}
+
+	/**
+	 * Get maintenance due day (1-31) from society settings
+	 * @param int $societyId
+	 * @return int|null
+	 */
+	public function get_maintenance_due_date(int $societyId): ?int
+	{
+		$this->db->select('setting_value')
+			->from('society_settings')
+			->where('society_id', $societyId)
+			->where('setting_key', 'maintenance_due_date')
+			->limit(1);
+		$row = $this->db->get()->row_array();
+		if ($row && is_numeric($row['setting_value'])) {
+			return (int) $row['setting_value'];
 		}
-	}
-
-	// ─── CRUD helpers for core payments table only ───────────────────────────
-
-	public function insert_payment($data)
-	{
-		$data['invoice_id'] = $this->_generate_invoice_id();
-		$data['created_at'] = date('Y-m-d H:i:s');
-		$this->db->insert('payments', $data);
-		return $this->db->insert_id();
-	}
-
-	public function update_payment($id, $data)
-	{
-		$data['updated_at'] = date('Y-m-d H:i:s');
-		$this->db->where('id', $id);
-		return $this->db->update('payments', $data);
-	}
-
-	public function delete_payment($id)
-	{
-		$this->db->where('id', $id);
-		return $this->db->delete('payments');
-	}
-
-	public function get_payment_by_id($id)
-	{
-		$this->db->where('id', $id);
-		$row = $this->db->get('payments')->row_array();
-		return $row ? $this->_normalise(array_merge($row, [
-			'flat' => $row['flat_number'] ?? '-',
-			'source_type' => 'maintenance',
-			'invoice_id' => $row['invoice_id'] ?? '',
-		])) : null;
-	}
-
-	private function _generate_invoice_id()
-	{
-		$year = date('Y');
-		$count = $this->db->where('YEAR(created_at)', $year)->count_all_results('payments') + 1;
-		return 'INV-' . $year . '-' . str_pad($count, 3, '0', STR_PAD_LEFT);
-	}
-
-	// ─── Residents list (for dropdown) ───────────────────────────────────────
-
-	public function get_residents_list()
-	{
-		return $this->db->select('id, name, flat_number')->get('residents')->result_array();
+		return null;
 	}
 }

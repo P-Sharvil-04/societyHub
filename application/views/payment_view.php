@@ -1,175 +1,148 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
-    <title>SocietyHub · Payment Management</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,viewport-fit=cover">
+    <title>SocietyHub </title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet"/>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 </head>
 <link rel="stylesheet" href="<?= base_url('assets/css/common.css') ?>">
 
 <style>
-/* ═══════════════════════════════════════════════════════════════
-   PAYMENT PAGE – extended styles
-   ═══════════════════════════════════════════════════════════════ */
-
-/* ── Source-type chips ── */
-.source-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-size: 0.7rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
+/* ═══ SOURCE BADGES ══════════════════════════════════════════════════════════ */
+.src-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 9px; border-radius: 20px; font-size: .68rem;
+    font-weight: 700; text-transform: uppercase; letter-spacing: .4px;
+    white-space: nowrap;
 }
-.source-badge.maintenance { background: rgba(52,152,219,0.12); color: #2980b9; }
-.source-badge.event       { background: rgba(155,89,182,0.12); color: #8e44ad; }
-.source-badge.booking     { background: rgba(230,126,34,0.12); color: #d35400; }
+.src-badge.maintenance { background: rgba(41,128,185,.12); color: #2980b9; }
+.src-badge.event       { background: rgba(142,68,173,.12); color: #8e44ad; }
+.src-badge.booking     { background: rgba(211,84,0,.12);   color: #d35400; }
+.src-badge.penalty     { background: rgba(231,76,60,.12);  color: #c0392b; }
 
-/* ── Status badges ── */
-.status-badge        { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
-.status-badge.paid   { background: rgba(39,174,96,0.12);  color: #27ae60; }
-.status-badge.pending{ background: rgba(243,156,18,0.12); color: #f39c12; }
-.status-badge.overdue{ background: rgba(231,76,60,0.12);  color: #e74c3c; }
-.status-badge.refunded{background: rgba(52,152,219,0.12); color: #2980b9; }
+/* ═══ STATUS BADGES ══════════════════════════════════════════════════════════ */
+.status-badge          { display: inline-block; padding: 3px 11px; border-radius: 20px; font-size: .73rem; font-weight: 600; }
+.status-badge.paid     { background: rgba(39,174,96,.12); color: #27ae60; }
+.status-badge.pending  { background: rgba(243,156,18,.12); color: #e67e22; }
+.status-badge.overdue  { background: rgba(231,76,60,.12); color: #e74c3c; }
+.status-badge.waived   { background: rgba(52,152,219,.12); color: #2980b9; }
 
-/* ── Payment avatar ── */
-.payment-avatar {
-    width: 40px; height: 40px; border-radius: 10px;
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-    display: flex; align-items: center; justify-content: center;
-    color: #fff; font-weight: 700; font-size: 0.9rem; flex-shrink: 0;
-}
-.payment-info { display: flex; align-items: center; gap: 10px; }
-.payment-details h4 { font-weight: 600; font-size: 0.9rem; margin-bottom: 2px; }
-.payment-details span { font-size: 0.72rem; color: var(--text-light); }
-
-/* ── Tabs ── */
-.source-tabs {
-    display: flex; gap: 8px; flex-wrap: wrap;
-    margin-bottom: 4px;
-}
+/* ═══ SOURCE FILTER TABS ═════════════════════════════════════════════════════ */
+.source-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
 .tab-btn {
-    padding: 7px 18px; border-radius: 30px; border: 1.5px solid transparent;
-    font-size: 0.82rem; font-weight: 600; cursor: pointer;
-    transition: all .2s;
-    background: var(--light-bg); color: var(--text-light);
+    padding: 6px 16px; border-radius: 30px; border: 1.5px solid var(--border, #ddd);
+    font-size: .8rem; font-weight: 600; cursor: pointer; background: transparent;
+    color: var(--text-light, #888); transition: all .18s;
 }
-.tab-btn.active, .tab-btn:hover { border-color: var(--primary); color: var(--primary); background: rgba(var(--primary-rgb),.08); }
-.tab-btn .tab-count {
-    display: inline-block; margin-left: 6px; background: var(--primary);
-    color: #fff; border-radius: 10px; padding: 1px 7px; font-size: 0.68rem;
+.tab-btn.active,
+.tab-btn:hover { border-color: var(--primary, #3498db); color: var(--primary, #3498db); background: rgba(52,152,219,.08); }
+.tab-count {
+    display: inline-block; margin-left: 5px; background: var(--primary, #3498db);
+    color: #fff; border-radius: 10px; padding: 0 7px; font-size: .67rem;
 }
 
-/* ── History modal ── */
-.history-timeline { display: flex; flex-direction: column; gap: 0; }
+/* ═══ PAYMENT AVATAR ═════════════════════════════════════════════════════════ */
+.pay-avatar {
+    width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--primary, #3498db), #2980b9);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-size: .85rem;
+}
+.pay-info         { display: flex; align-items: center; gap: 10px; }
+.pay-details h4   { font-size: .88rem; font-weight: 600; margin: 0 0 2px; }
+.pay-details span { font-size: .72rem; color: var(--text-light, #888); }
+
+/* ═══ HISTORY MODAL TIMELINE ════════════════════════════════════════════════ */
 .history-item {
-    display: flex; gap: 16px; align-items: flex-start;
-    padding: 14px 0;
-    border-bottom: 1px solid var(--border);
-    position: relative;
+    display: flex; gap: 14px; padding: 12px 0;
+    border-bottom: 1px solid var(--border, #eee);
+    align-items: flex-start;
 }
 .history-item:last-child { border-bottom: none; }
-.history-dot {
-    width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+.h-dot {
+    width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
-    font-size: 0.85rem; color: #fff; margin-top: 2px;
+    font-size: .8rem; color: #fff;
 }
-.history-dot.paid    { background: #27ae60; }
-.history-dot.pending { background: #f39c12; }
-.history-dot.overdue { background: #e74c3c; }
-.history-dot.booking { background: #d35400; }
-.history-dot.event   { background: #8e44ad; }
-.history-body h4 { font-size: 0.9rem; font-weight: 700; margin-bottom: 3px; }
-.history-body p  { font-size: 0.78rem; color: var(--text-light); margin: 0; }
-.history-amount  { margin-left: auto; font-weight: 800; font-size: 1rem; white-space: nowrap; }
-.history-amount.positive { color: var(--success); }
+.h-dot.maintenance { background: #2980b9; }
+.h-dot.event       { background: #8e44ad; }
+.h-dot.booking     { background: #d35400; }
+.h-dot.penalty     { background: #c0392b; }
+.h-body h4  { font-size: .88rem; font-weight: 700; margin: 0 0 3px; }
+.h-body p   { font-size: .76rem; color: var(--text-light, #888); margin: 0; }
+.h-amount   { margin-left: auto; font-weight: 800; font-size: .98rem; white-space: nowrap; color: #27ae60; }
 
-/* ── Empty state ── */
-.empty-state { text-align: center; padding: 50px 20px; color: var(--text-light); }
-.empty-state i { font-size: 2.5rem; margin-bottom: 12px; display: block; opacity: .4; }
-
-/* ── Resident search ── */
-.resident-lookup-wrap { position: relative; }
-.resident-lookup-wrap .lookup-dropdown {
-    position: absolute; top: 100%; left: 0; right: 0; z-index: 200;
-    background: var(--card-bg); border: 1px solid var(--border);
-    border-radius: 8px; max-height: 200px; overflow-y: auto;
-    box-shadow: 0 4px 20px rgba(0,0,0,.12);
-}
-.lookup-option {
-    padding: 10px 14px; cursor: pointer; font-size: 0.88rem;
-    border-bottom: 1px solid var(--border);
-    transition: background .15s;
-}
-.lookup-option:hover { background: var(--light-bg); }
+/* ═══ EMPTY STATE ════════════════════════════════════════════════════════════ */
+.empty-state { text-align: center; padding: 40px 20px; color: var(--text-light, #888); }
+.empty-state i { display: block; font-size: 2.2rem; margin-bottom: 10px; opacity: .35; }
+.management-card {
+			background: var(--card-bg);
+			border-radius: 20px;
+			padding: 20px;
+			border: 1px solid var(--border);
+			width: 100%;
+		}
 </style>
 
 <body>
 <div class="overlay" id="overlay"></div>
-
-<!-- SIDEBAR -->
 <?php $activePage = 'payments'; ?>
 <?php include('sidebar.php') ?>
 
-<!-- HEADER -->
-<div class="header" id="header">
-    <div class="header-left">
-        <i class="fas fa-bars hamburger" id="hamburger"></i>
-        <div class="search-bar">
-            <i class="fas fa-search"></i>
-            <input type="text" id="globalSearch" placeholder="Search payments...">
-        </div>
-    </div>
-    <?php $this->load->view('header'); ?>
-</div>
-
-<!-- MAIN -->
 <div class="main" id="main">
 
-    <!-- ── STATS ── -->
+    <!-- ── STATS ──────────────────────────────────────────────────────────── -->
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-icon"><i class="fas fa-coins"></i></div>
             <div class="stat-info">
                 <h4>Total Collected</h4>
-                <h2 id="totalCollected">₹<?= number_format($stats['total_collected']) ?></h2>
-                <div class="stat-trend trend-up"><i class="fas fa-check-circle"></i> <?= $stats['paid_count'] ?> transactions</div>
+                <h2>₹<?= number_format($stats['total_collected'], 0, '.', ',') ?></h2>
+                <div class="stat-trend trend-up">
+                    <i class="fas fa-check-circle"></i>
+                    <?= $stats['paid_count'] ?> transactions
+                </div>
             </div>
         </div>
         <div class="stat-card">
             <div class="stat-icon"><i class="fas fa-clock"></i></div>
             <div class="stat-info">
                 <h4>Pending</h4>
-                <h2 id="pendingAmount">₹<?= number_format($stats['pending_amount']) ?></h2>
-                <div class="stat-trend" style="color:var(--warning)"><i class="fas fa-exclamation-circle"></i> <?= $stats['pending_count'] ?> invoices</div>
+                <h2>₹<?= number_format($stats['pending_amount'], 0, '.', ',') ?></h2>
+                <div class="stat-trend" style="color:var(--warning,#e67e22)">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <?= $stats['pending_count'] ?> invoices
+                </div>
             </div>
         </div>
         <div class="stat-card">
             <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
             <div class="stat-info">
-                <h4>Overdue</h4>
-                <h2 id="overdueAmount">₹<?= number_format($stats['overdue_amount']) ?></h2>
-                <div class="stat-trend" style="color:var(--danger)"><i class="fas fa-arrow-down"></i> <?= $stats['overdue_count'] ?> invoices</div>
+                <h4>Overdue / Penalties</h4>
+                <h2>₹<?= number_format($stats['overdue_amount'], 0, '.', ',') ?></h2>
+                <div class="stat-trend" style="color:var(--danger,#e74c3c)">
+                    <i class="fas fa-arrow-down"></i>
+                    <?= $stats['overdue_count'] ?> records
+                </div>
             </div>
         </div>
         <div class="stat-card">
             <div class="stat-icon"><i class="fas fa-percent"></i></div>
             <div class="stat-info">
                 <h4>Collection Rate</h4>
-                <h2 id="collectionRate"><?= $stats['collection_rate'] ?>%</h2>
-                <div class="stat-trend"><i class="fas fa-chart-line"></i> All sources combined</div>
+                <h2><?= $stats['collection_rate'] ?>%</h2>
+                <div class="stat-trend">
+                    <i class="fas fa-chart-line"></i> All sources combined
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- ── CHART ── -->
-    <div class="chart-card">
+    <!-- ── CHART ──────────────────────────────────────────────────────────── -->
+    <!-- <div class="chart-card">
         <div class="chart-header">
             <h3><i class="fas fa-chart-bar"></i> Payment Overview</h3>
             <span class="chart-period">Last 6 Months · All Sources</span>
@@ -177,250 +150,244 @@
         <div class="chart-container">
             <canvas id="paymentChart"></canvas>
         </div>
-    </div>
+    </div> -->
 
-    <!-- ── SOURCE TABS + FILTERS ── -->
-    <div class="filter-section" style="flex-direction:column; gap:14px;">
-        <!-- Source Tabs -->
+    <!-- ── FILTERS + TABS ─────────────────────────────────────────────────── -->
+    <div class="filter-section" style="flex-direction:column; gap:12px;">
+        <!-- Source filter tabs -->
         <div class="source-tabs">
-            <button class="tab-btn active" data-source="">
-                <i class="fas fa-layer-group"></i> All Sources
-                <span class="tab-count" id="countAll"><?= count($payments) ?></span>
+            <button class="tab-btn active" data-src="">
+                <i class="fas fa-layer-group"></i> All
+                <span class="tab-count"><?= count($payments) ?></span>
             </button>
-            <button class="tab-btn" data-source="maintenance">
+            <button class="tab-btn" data-src="maintenance">
                 <i class="fas fa-home"></i> Maintenance
-                <span class="tab-count" id="countMaintenance"><?= count(array_filter($payments, fn($p) => $p['source_type']==='maintenance')) ?></span>
+                <span class="tab-count"><?= count(array_filter($payments, fn($p) => $p['source_type']==='maintenance')) ?></span>
             </button>
-            <button class="tab-btn" data-source="event">
-                <i class="fas fa-calendar-star"></i> Events
-                <span class="tab-count" id="countEvent"><?= count(array_filter($payments, fn($p) => $p['source_type']==='event')) ?></span>
+            <button class="tab-btn" data-src="event">
+                <i class="fas fa-calendar-alt"></i> Events
+                <span class="tab-count"><?= count(array_filter($payments, fn($p) => $p['source_type']==='event')) ?></span>
             </button>
-            <button class="tab-btn" data-source="booking">
+            <button class="tab-btn" data-src="booking">
                 <i class="fas fa-bookmark"></i> Bookings
-                <span class="tab-count" id="countBooking"><?= count(array_filter($payments, fn($p) => $p['source_type']==='booking')) ?></span>
+                <span class="tab-count"><?= count(array_filter($payments, fn($p) => $p['source_type']==='booking')) ?></span>
+            </button>
+            <button class="tab-btn" data-src="penalty">
+                <i class="fas fa-gavel"></i> Penalties
+                <span class="tab-count"><?= count(array_filter($payments, fn($p) => $p['source_type']==='penalty')) ?></span>
             </button>
         </div>
-        <!-- Filters row -->
+        <!-- Filter row -->
         <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end;">
             <div class="filter-group">
                 <label><i class="fas fa-filter"></i> Status</label>
-                <select id="statusFilter" class="filter-select" onchange="filterPayments()">
+                <select id="statusFilter" class="filter-select" onchange="applyFilters()">
                     <option value="">All Status</option>
                     <option value="paid">Paid</option>
                     <option value="pending">Pending</option>
+                    <option value="waived">Waived</option>
                     <option value="overdue">Overdue</option>
-                    <option value="refunded">Refunded</option>
                 </select>
             </div>
             <div class="filter-group">
                 <label><i class="fas fa-calendar"></i> Month</label>
-                <select id="monthFilter" class="filter-select" onchange="filterPayments()">
+                <select id="monthFilter" class="filter-select" onchange="applyFilters()">
                     <option value="">All Months</option>
-                    <?php for ($m = 1; $m <= 12; $m++): ?>
-                    <option value="<?= str_pad($m,2,'0',STR_PAD_LEFT) ?>"><?= date('F', mktime(0,0,0,$m,1)) ?></option>
+                    <?php for ($m=1;$m<=12;$m++): ?>
+                    <option value="<?= str_pad($m,2,'0',STR_PAD_LEFT) ?>"><?= date('F',mktime(0,0,0,$m,1)) ?></option>
                     <?php endfor; ?>
                 </select>
             </div>
-            <div class="search-box" style="flex:1; min-width:220px;">
+            <div class="search-box" style="flex:1;min-width:220px;">
                 <i class="fas fa-search"></i>
-                <input type="text" id="paymentSearch" placeholder="Search invoice, resident, flat…" onkeyup="filterPayments()">
+                <input type="text" id="srchBox" placeholder="Invoice, resident, flat…" oninput="applyFilters()">
             </div>
         </div>
     </div>
 
-    <!-- ── PAYMENTS TABLE ── -->
+    <!-- ── TABLE ──────────────────────────────────────────────────────────── -->
     <div class="table-section">
         <div class="table-header">
             <h3><i class="fas fa-list"></i> Payment Transactions</h3>
             <div class="table-actions">
-                <button class="btn-sm btn-outline" onclick="refreshTable()">
+                <button class="btn-sm btn-outline" onclick="refreshData()">
                     <i class="fas fa-sync-alt"></i> Refresh
                 </button>
             </div>
             <div class="page-actions">
-                <button class="btn btn-outline" onclick="exportPayments()">
-                    <i class="fas fa-download"></i> Export
+                <button class="btn btn-outline" onclick="exportCSV()">
+                    <i class="fas fa-download"></i> Export CSV
                 </button>
-                <button class="btn btn-primary" onclick="openAddPaymentModal()">
+                <button class="btn btn-primary" onclick="openAddModal()">
                     <i class="fas fa-plus-circle"></i> Record Payment
                 </button>
             </div>
         </div>
+
         <div class="table-wrapper">
             <table id="paymentsTable">
                 <thead>
                     <tr>
-                        <th>Invoice ID</th>
+                        <th>Invoice</th>
                         <th>Source</th>
                         <th>Resident</th>
                         <th>Flat</th>
                         <th>Type</th>
                         <th>Amount</th>
-                        <th>Date</th>
+                        <th>Paid On</th>
                         <th>Due Date</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody id="paymentsTableBody"></tbody>
+                <tbody id="tBody"></tbody>
             </table>
         </div>
-        <div class="pagination" id="paginationWrap"></div>
+        <div class="pagination" id="pgWrap"></div>
     </div>
 
-    <!-- ── RECENT TRANSACTIONS ── -->
-    <div class="management-card">
+    <!-- ── RECENT TRANSACTIONS ────────────────────────────────────────────── -->
+		<div class="management-card" style="margin-bottom:30px;">
         <div class="section-header">
+			<div class="member-list">
             <h3><i class="fas fa-clock"></i> Recent Transactions</h3>
-            <a href="#" class="view-all" onclick="viewAllTransactions(); return false;">View All →</a>
+            <a href="#" class="view-all" onclick="showAll();return false;">View All →</a>
         </div>
-        <div class="member-list" id="recentTransactionsList"></div>
-    </div>
 
+        <div class="member-list" id="recentList"></div>
+		
+		</div>
+    </div>
 </div><!-- /main -->
 
-<!-- ══════════════════════════════════════════════════════════════
-     MODALS
-══════════════════════════════════════════════════════════════ -->
+<!-- ═══════════════════════════════════════ MODALS ═══════════════════════════ -->
 
-<!-- Add / Edit Payment -->
-<div class="modal" id="paymentFormModal">
+<!-- Add / Edit maintenance payment -->
+<div class="modal" id="payFormModal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3><i class="fas fa-credit-card"></i> <span id="formModalTitle">Record Payment</span></h3>
-            <span class="modal-close" onclick="closeModal('paymentFormModal')">&times;</span>
+            <h3><i class="fas fa-credit-card"></i> <span id="fmTitle">Record Payment</span></h3>
+            <span class="modal-close" onclick="closeModal('payFormModal')">&times;</span>
         </div>
         <div class="modal-body">
-            <form id="paymentForm" onsubmit="return false;">
-                <input type="hidden" id="paymentId">
+            <form id="payForm" onsubmit="return false;">
+                <!-- <input type="hidden" id="editId"> -->
                 <div class="form-row">
                     <div class="form-group">
                         <label>Resident *</label>
-                        <select class="form-control" id="residentId" required onchange="onResidentChange(this)">
+                        <select class="form-control" id="fUser" required onchange="fillFlat(this)">
                             <option value="">Select Resident</option>
-                            <?php foreach ($residents as $r): ?>
-                            <option value="<?= $r['id'] ?>" data-flat="<?= htmlspecialchars($r['flat_number']) ?>">
-                                <?= htmlspecialchars($r['name']) ?> (<?= htmlspecialchars($r['flat_number']) ?>)
+                            <?php foreach ($users as $u): ?>
+                            <option value="<?= $u['id'] ?>"
+                                    data-flat="<?= htmlspecialchars($u['flat_no'] ?? '') ?>"
+                                    data-type="<?= htmlspecialchars($u['member_type'] ?? '') ?>">
+                                <?= htmlspecialchars($u['name']) ?> (<?= htmlspecialchars($u['flat_no'] ?? '-') ?>)
                             </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Flat Number</label>
-                        <input type="text" class="form-control" id="flatNumber" placeholder="Auto-filled" readonly>
+                        <label>Flat</label>
+                        <input type="text" class="form-control" id="fFlat" placeholder="Auto-filled" readonly>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label>Payment Type *</label>
-                        <select class="form-control" id="paymentType" required>
-                            <option value="">Select Type</option>
-                            <option value="Maintenance">Maintenance</option>
-                            <option value="Water Bill">Water Bill</option>
-                            <option value="Electricity">Electricity</option>
-                            <option value="Parking">Parking</option>
-                            <option value="Amenity Booking">Amenity Booking</option>
-                            <option value="Late Fee">Late Fee</option>
-                            <option value="Other">Other</option>
+                        <select class="form-control" id="fType" required>
+                            <option value="maintenance">Maintenance</option>
+                            <option value="penalty">Penalty</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label>Amount (₹) *</label>
-                        <input type="number" class="form-control" id="amount" placeholder="Enter amount" required min="1">
+                        <input type="number" class="form-control" id="fAmount" placeholder="e.g. 2500" min="1" required>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Payment Date *</label>
-                        <input type="date" class="form-control" id="paymentDate" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Due Date *</label>
-                        <input type="date" class="form-control" id="dueDate" required>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Payment Method</label>
-                        <select class="form-control" id="paymentMethod">
-                            <option value="Cash">Cash</option>
-                            <option value="Cheque">Cheque</option>
-                            <option value="Bank Transfer">Bank Transfer</option>
-                            <option value="UPI">UPI</option>
-                            <option value="Credit Card">Credit Card</option>
-                            <option value="Debit Card">Debit Card</option>
-                            <option value="Online">Online</option>
+                        <label>Month *</label>
+                        <select class="form-control" id="fMonth" required>
+                            <?php for ($m=1;$m<=12;$m++): ?>
+                            <option value="<?= date('F',mktime(0,0,0,$m,1)) ?>"
+                                    <?= (int)date('n') === $m ? 'selected' : '' ?>>
+                                <?= date('F',mktime(0,0,0,$m,1)) ?>
+                            </option>
+                            <?php endfor; ?>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Transaction ID</label>
-                        <input type="text" class="form-control" id="transactionId" placeholder="UTR / Cheque / Ref No.">
+                        <label>Year *</label>
+                        <input type="number" class="form-control" id="fYear"
+                               value="<?= date('Y') ?>" min="2020" max="2099" required>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label>Description</label>
-                    <textarea class="form-control" id="description" rows="2" placeholder="Optional note"></textarea>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Payment Date</label>
+                        <input type="date" class="form-control" id="fDate" value="<?= date('Y-m-d') ?>">
+                    </div>
+                    <div class="form-group">
+                        <label>Status *</label>
+                        <select class="form-control" id="fStatus" required>
+                            <option value="paid">Paid</option>
+                            <option value="pending">Pending</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Status *</label>
-                    <select class="form-control" id="status" required>
-                        <option value="paid">Paid</option>
-                        <option value="pending">Pending</option>
-                        <option value="overdue">Overdue</option>
-                        <option value="refunded">Refunded</option>
-                    </select>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Razorpay Order ID</label>
+                        <input type="text" class="form-control" id="fOrderId" placeholder="Optional">
+                    </div>
+                    <div class="form-group">
+                        <label>Razorpay Payment ID</label>
+                        <input type="text" class="form-control" id="fPaymentId" placeholder="Optional">
+                    </div>
                 </div>
             </form>
         </div>
         <div class="modal-footer">
-            <button class="btn btn-outline" onclick="closeModal('paymentFormModal')"><i class="fas fa-times"></i> Cancel</button>
-            <button class="btn btn-primary" onclick="savePayment()"><i class="fas fa-save"></i> Save Payment</button>
+            <button class="btn btn-outline" onclick="closeModal('payFormModal')"><i class="fas fa-times"></i> Cancel</button>
+            <button class="btn btn-primary" onclick="savePayment()"><i class="fas fa-save"></i> Save</button>
         </div>
     </div>
 </div>
 
-<!-- View Payment -->
-<div class="modal" id="viewPaymentModal">
+<!-- View Payment Detail -->
+<div class="modal" id="viewModal">
     <div class="modal-content">
         <div class="modal-header">
             <h3><i class="fas fa-file-invoice"></i> Payment Details</h3>
-            <span class="modal-close" onclick="closeModal('viewPaymentModal')">&times;</span>
+            <span class="modal-close" onclick="closeModal('viewModal')">&times;</span>
         </div>
-        <div class="modal-body" id="viewPaymentBody"></div>
+        <div class="modal-body" id="viewBody"></div>
         <div class="modal-footer">
-            <button class="btn btn-outline" onclick="closeModal('viewPaymentModal')"><i class="fas fa-times"></i> Close</button>
-            <button class="btn btn-outline" id="editFromViewBtn" onclick="editFromView()"><i class="fas fa-edit"></i> Edit</button>
-            <button class="btn btn-outline" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
-            <button class="btn btn-primary" id="historyFromViewBtn" onclick="viewResidentHistory()">
+            <button class="btn btn-outline" onclick="closeModal('viewModal')"><i class="fas fa-times"></i> Close</button>
+            <!-- <button id="editFromViewBtn"></button> -->
+            <button class="btn btn-primary" id="historyBtn" onclick="showUserHistory()">
                 <i class="fas fa-history"></i> Full History
             </button>
         </div>
     </div>
 </div>
 
-<!-- Transaction History Modal -->
+<!-- Transaction History -->
 <div class="modal" id="historyModal">
     <div class="modal-content" style="max-width:640px;">
         <div class="modal-header">
-            <h3><i class="fas fa-history"></i> Transaction History – <span id="historyResidentName"></span></h3>
+            <h3><i class="fas fa-history"></i> History – <span id="hName"></span></h3>
             <span class="modal-close" onclick="closeModal('historyModal')">&times;</span>
         </div>
         <div class="modal-body">
-            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px;">
-                <span id="historyBadgeMaintenance" class="source-badge maintenance" style="cursor:pointer" onclick="filterHistory('maintenance')">
-                    <i class="fas fa-home"></i> Maintenance
-                </span>
-                <span id="historyBadgeEvent" class="source-badge event" style="cursor:pointer" onclick="filterHistory('event')">
-                    <i class="fas fa-calendar-star"></i> Events
-                </span>
-                <span id="historyBadgeBooking" class="source-badge booking" style="cursor:pointer" onclick="filterHistory('booking')">
-                    <i class="fas fa-bookmark"></i> Bookings
-                </span>
-                <span class="source-badge" style="cursor:pointer; background:var(--light-bg); color:var(--text-dark)" onclick="filterHistory('')">
-                    <i class="fas fa-layer-group"></i> All
-                </span>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;" id="hFilterBtns">
+                <button class="tab-btn active" data-hsrc="" onclick="filterHistory(this,'')">All</button>
+                <button class="tab-btn" data-hsrc="maintenance" onclick="filterHistory(this,'maintenance')"><i class="fas fa-home"></i> Maintenance</button>
+                <button class="tab-btn" data-hsrc="event"       onclick="filterHistory(this,'event')"><i class="fas fa-calendar-alt"></i> Events</button>
+                <button class="tab-btn" data-hsrc="booking"     onclick="filterHistory(this,'booking')"><i class="fas fa-bookmark"></i> Bookings</button>
+                <button class="tab-btn" data-hsrc="penalty"     onclick="filterHistory(this,'penalty')"><i class="fas fa-gavel"></i> Penalties</button>
             </div>
-            <div class="history-timeline" id="historyList"></div>
+            <div id="hList"></div>
         </div>
         <div class="modal-footer">
             <button class="btn btn-outline" onclick="closeModal('historyModal')"><i class="fas fa-times"></i> Close</button>
@@ -432,516 +399,436 @@
 <div class="modal" id="deleteModal">
     <div class="modal-content" style="max-width:400px;">
         <div class="modal-header">
-            <h3><i class="fas fa-exclamation-triangle" style="color:var(--danger)"></i> Confirm Delete</h3>
+            <h3><i class="fas fa-exclamation-triangle" style="color:var(--danger,#e74c3c)"></i> Confirm Delete</h3>
             <span class="modal-close" onclick="closeModal('deleteModal')">&times;</span>
         </div>
-        <div class="modal-body">
-            <p style="text-align:center; padding:20px;">
-                <i class="fas fa-trash" style="font-size:3rem; color:var(--danger); display:block; margin-bottom:12px;"></i>
-                Are you sure you want to delete this payment record?<br>
-                <span style="color:var(--danger); font-size:0.85rem;">This action cannot be undone.</span>
-            </p>
+        <div class="modal-body" style="text-align:center; padding:24px;">
+            <i class="fas fa-trash" style="font-size:2.8rem; color:var(--danger,#e74c3c); display:block; margin-bottom:12px;"></i>
+            Delete this payment record? <br>
+            <small style="color:var(--danger,#e74c3c)">This cannot be undone.</small>
         </div>
         <div class="modal-footer">
-            <button class="btn btn-outline" onclick="closeModal('deleteModal')"><i class="fas fa-times"></i> Cancel</button>
-            <button class="btn btn-primary" style="background:var(--danger)" onclick="confirmDelete()"><i class="fas fa-trash"></i> Delete</button>
+            <button class="btn btn-outline" onclick="closeModal('deleteModal')">Cancel</button>
+            <button class="btn btn-primary" style="background:var(--danger,#e74c3c)" onclick="confirmDelete()">
+                <i class="fas fa-trash"></i> Delete
+            </button>
         </div>
     </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════════════
-     SCRIPTS
-══════════════════════════════════════════════════════════════ -->
+<!-- ═══════════════════════════════════════ SCRIPTS ══════════════════════════ -->
 <script src="<?= base_url('assets/js/main.js') ?>"></script>
 <script>
-// ── PHP → JS data bridge ─────────────────────────────────────────────────────
-const BASE_URL   = '<?= base_url() ?>';
-let paymentData  = <?= json_encode($payments)  ?>;
-let chartData    = <?= json_encode($chart)     ?>;
+// ── CONFIG & DATA BRIDGE ──────────────────────────────────────────────────────
+const BASE    = '<?= base_url() ?>';
+let allData   = <?= json_encode($payments)  ?>;  // PHP → JS
+let chartData = <?= json_encode($chart)     ?>;
+let histData  = [];            // current user's history
 
-// ── State ────────────────────────────────────────────────────────────────────
-let activeSource     = '';       // '' | 'maintenance' | 'event' | 'booking'
-let currentPaymentId = null;
-let deleteId         = null;
-let historyAll       = [];       // full history for current resident
-let currentPage      = 1;
-const PAGE_SIZE      = 15;
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let activeSrc   = '';
+let curViewId   = null;        // payments.id of viewed record
+let curUserId   = null;        // user_id for history
+let curUserName = '';
+let deleteId    = null;
+let curPage     = 1;
+const PER_PAGE  = 15;
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-const fmt = (n) => '₹' + Number(n).toLocaleString('en-IN');
-const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', {day:'2-digit', month:'2-digit', year:'numeric'}) : '–';
-const fmtDateLong = (d) => d ? new Date(d).toLocaleDateString('en-IN', {day:'numeric', month:'long', year:'numeric'}) : 'Not paid';
-const initials = (name) => name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
-const cap = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
-const sourceIcon = { maintenance:'home', event:'calendar-alt', booking:'bookmark' };
+// ── ICON MAP ──────────────────────────────────────────────────────────────────
+const SRC_ICON  = { maintenance:'home', event:'calendar-alt', booking:'bookmark', penalty:'gavel' };
 
-// ── CHART ────────────────────────────────────────────────────────────────────
-function initPaymentChart() {
-    const canvas = document.getElementById('paymentChart');
-    if (!canvas) return;
-    if (window._payChart instanceof Chart) window._payChart.destroy();
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+const fmt     = n  => '₹' + Number(n).toLocaleString('en-IN');
+const fmtDate = ds => ds ? new Date(ds).toLocaleDateString('en-IN',{day:'2-digit',month:'2-digit',year:'numeric'}) : '–';
+const fmtLong = ds => ds ? new Date(ds).toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})   : 'Not paid';
+const initials= n  => n.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+const cap     = s  => s ? s.charAt(0).toUpperCase()+s.slice(1) : '';
 
-    const labels  = chartData.map(r => r.label);
-    const paid    = chartData.map(r => r.paid);
-    const pending = chartData.map(r => r.pending);
-
-    window._payChart = new Chart(canvas.getContext('2d'), {
+// ── CHART ─────────────────────────────────────────────────────────────────────
+function initChart() {
+    const cv = document.getElementById('paymentChart');
+    if (!cv) return;
+    if (window._chart instanceof Chart) window._chart.destroy();
+    window._chart = new Chart(cv.getContext('2d'), {
         type: 'bar',
         data: {
-            labels,
+            labels: chartData.map(r=>r.label),
             datasets: [
-                { label:'Paid',            data:paid,    backgroundColor:'rgba(39,174,96,.85)',  borderColor:'#27ae60', borderWidth:1, borderRadius:8, barPercentage:.6 },
-                { label:'Pending/Overdue', data:pending, backgroundColor:'rgba(243,156,18,.85)', borderColor:'#f39c12', borderWidth:1, borderRadius:8, barPercentage:.6 }
+                { label:'Paid',    data:chartData.map(r=>r.paid),
+                  backgroundColor:'rgba(39,174,96,.85)', borderColor:'#27ae60', borderWidth:1, borderRadius:8, barPercentage:.6 },
+                { label:'Pending', data:chartData.map(r=>r.pending),
+                  backgroundColor:'rgba(243,156,18,.85)', borderColor:'#f39c12', borderWidth:1, borderRadius:8, barPercentage:.6 }
             ]
         },
         options: {
             responsive:true, maintainAspectRatio:false,
             plugins:{
-                legend:{ position:'top', labels:{ usePointStyle:true, boxWidth:8, padding:20 } },
-                tooltip:{
-                    mode:'index', intersect:false,
-                    callbacks:{ label: ctx => `${ctx.dataset.label}: ${fmt(ctx.parsed.y)}` }
-                }
+                legend:{ position:'top', labels:{ usePointStyle:true, boxWidth:8, padding:18 } },
+                tooltip:{ mode:'index', intersect:false, callbacks:{ label:ctx=>`${ctx.dataset.label}: ${fmt(ctx.parsed.y)}` } }
             },
             scales:{
-                y:{ beginAtZero:true, ticks:{ callback: v => '₹'+(v/1000).toFixed(0)+'k' }, title:{ display:true, text:'Amount (₹)' } },
+                y:{ beginAtZero:true, ticks:{ callback:v=>'₹'+(v/1000).toFixed(0)+'k' }, title:{ display:true, text:'Amount (₹)' } },
                 x:{ grid:{ display:false } }
             }
         }
     });
 }
 
-// ── TABLE ────────────────────────────────────────────────────────────────────
-function getFilteredData() {
-    const search = document.getElementById('paymentSearch')?.value.toLowerCase() || '';
-    const status = document.getElementById('statusFilter')?.value || '';
-    const month  = document.getElementById('monthFilter')?.value || '';
+// ── FILTER ────────────────────────────────────────────────────────────────────
+function filtered() {
+    const srch   = document.getElementById('srchBox').value.toLowerCase();
+    const status = document.getElementById('statusFilter').value;
+    const month  = document.getElementById('monthFilter').value;
 
-    return paymentData.filter(p => {
-        const matchSource = !activeSource || p.source_type === activeSource;
-        const matchStatus = !status || p.status === status;
-        const matchSearch = !search ||
-            p.invoice_id.toLowerCase().includes(search) ||
-            p.resident_name.toLowerCase().includes(search) ||
-            p.flat.toLowerCase().includes(search) ||
-            p.payment_type.toLowerCase().includes(search);
-        let matchMonth = true;
+    return allData.filter(p => {
+        if (activeSrc && p.source_type !== activeSrc) return false;
+        if (status && p.status !== status)             return false;
+        if (srch && ![p.invoice_id,p.resident_name,p.flat,p.payment_type,p.description]
+                       .some(f=>(f||'').toLowerCase().includes(srch))) return false;
         if (month) {
-            const d = p.payment_date ? new Date(p.payment_date) : new Date(p.due_date);
-            matchMonth = String(d.getMonth() + 1).padStart(2,'0') === month;
+            const ds = p.payment_date || p.due_date;
+            if (!ds) return false;
+            const m = String(new Date(ds).getMonth()+1).padStart(2,'0');
+            if (m !== month) return false;
         }
-        return matchSource && matchStatus && matchSearch && matchMonth;
+        return true;
     });
 }
 
-function renderTable(filtered) {
-    const tbody = document.getElementById('paymentsTableBody');
-    const start = (currentPage - 1) * PAGE_SIZE;
-    const page  = filtered.slice(start, start + PAGE_SIZE);
+function applyFilters() { curPage = 1; renderTable(); }
 
-    if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><i class="fas fa-search"></i>No matching payments found.</div></td></tr>`;
-        renderPagination(0);
-        return;
+// ── TABLE ─────────────────────────────────────────────────────────────────────
+function renderTable() {
+    const data  = filtered();
+    const tbody = document.getElementById('tBody');
+    const start = (curPage-1)*PER_PAGE;
+    const page  = data.slice(start, start+PER_PAGE);
+
+    if (!data.length) {
+        tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><i class="fas fa-search"></i>No matching records.</div></td></tr>`;
+        renderPagination(0); return;
     }
 
     tbody.innerHTML = page.map(p => `
         <tr>
             <td><strong>${p.invoice_id}</strong></td>
+            <td><span class="src-badge ${p.source_type}"><i class="fas fa-${SRC_ICON[p.source_type]||'circle'}"></i> ${cap(p.source_type)}</span></td>
             <td>
-                <span class="source-badge ${p.source_type}">
-                    <i class="fas fa-${sourceIcon[p.source_type] || 'circle'}"></i>
-                    ${cap(p.source_type)}
-                </span>
-            </td>
-            <td>
-                <div class="payment-info">
-                    <div class="payment-avatar">${initials(p.resident_name)}</div>
-                    <div class="payment-details">
+                <div class="pay-info">
+                    <div class="pay-avatar">${initials(p.resident_name)}</div>
+                    <div class="pay-details">
                         <h4>${p.resident_name}</h4>
-                        <span>ID: RES-${String(p.resident_id).padStart(3,'0')}</span>
+                        <span>UID: ${p.resident_id}</span>
                     </div>
                 </div>
             </td>
             <td>${p.flat}</td>
-            <td style="max-width:160px; font-size:.82rem;">${p.payment_type}</td>
+            <td style="font-size:.82rem; max-width:150px;">${p.payment_type}</td>
             <td><strong>${fmt(p.amount)}</strong></td>
             <td>${fmtDate(p.payment_date)}</td>
             <td>${fmtDate(p.due_date)}</td>
             <td><span class="status-badge ${p.status}">${cap(p.status)}</span></td>
             <td>
                 <div class="action-buttons">
-                    <button class="btn-icon" onclick="viewPayment('${p.invoice_id}')" title="View"><i class="fas fa-eye"></i></button>
-                    ${p.source_type==='maintenance' ? `<button class="btn-icon" onclick="editPayment('${p.invoice_id}')" title="Edit"><i class="fas fa-edit"></i></button>
-                    <button class="btn-icon delete" onclick="deletePayment('${p.id}')" title="Delete"><i class="fas fa-trash"></i></button>` : ''}
-                    <button class="btn-icon" onclick="viewResidentHistoryById(${p.resident_id}, '${p.resident_name}')" title="History"><i class="fas fa-history"></i></button>
+                    <button class="btn-icon" title="View"    onclick="viewPayment('${p.invoice_id}')"><i class="fas fa-eye"></i></button>
+               
+                    <button class="btn-icon" title="History" onclick="openHistoryFor(${p.resident_id},'${p.resident_name.replace(/'/g,"\\'")}')"><i class="fas fa-history"></i></button>
                 </div>
             </td>
-        </tr>
-    `).join('');
+        </tr>`).join('');
 
-    renderPagination(filtered.length);
+    renderPagination(data.length);
 }
 
 function renderPagination(total) {
-    const wrap  = document.getElementById('paginationWrap');
-    const pages = Math.ceil(total / PAGE_SIZE);
+    const wrap  = document.getElementById('pgWrap');
+    const pages = Math.ceil(total/PER_PAGE);
     if (pages <= 1) { wrap.innerHTML = ''; return; }
-
-    let html = `<span class="page-item" onclick="goPage(${currentPage-1})"><i class="fas fa-chevron-left"></i></span>`;
-    for (let i = 1; i <= pages; i++) {
-        html += `<span class="page-item ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</span>`;
-    }
-    html += `<span class="page-item" onclick="goPage(${currentPage+1})"><i class="fas fa-chevron-right"></i></span>`;
+    let html = `<span class="page-item" onclick="goPage(${curPage-1})"><i class="fas fa-chevron-left"></i></span>`;
+    for (let i=1;i<=pages;i++) html += `<span class="page-item ${i===curPage?'active':''}" onclick="goPage(${i})">${i}</span>`;
+    html += `<span class="page-item" onclick="goPage(${curPage+1})"><i class="fas fa-chevron-right"></i></span>`;
     wrap.innerHTML = html;
 }
 
 function goPage(n) {
-    const total = Math.ceil(getFilteredData().length / PAGE_SIZE);
-    if (n < 1 || n > total) return;
-    currentPage = n;
-    renderTable(getFilteredData());
+    const max = Math.ceil(filtered().length/PER_PAGE);
+    if (n<1||n>max) return;
+    curPage=n; renderTable();
 }
 
-function filterPayments() {
-    currentPage = 1;
-    renderTable(getFilteredData());
-}
+// ── SOURCE TABS ───────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn[data-src]').forEach(btn=>btn.addEventListener('click',function(){
+    document.querySelectorAll('.tab-btn[data-src]').forEach(b=>b.classList.remove('active'));
+    this.classList.add('active');
+    activeSrc = this.dataset.src;
+    applyFilters();
+}));
 
-// ── SOURCE TABS ──────────────────────────────────────────────────────────────
-document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-        activeSource = this.dataset.source;
-        filterPayments();
-    });
-});
-
-// ── RECENT TRANSACTIONS ──────────────────────────────────────────────────────
-function loadRecentTransactions() {
-    const list = document.getElementById('recentTransactionsList');
-    const recent = [...paymentData]
-        .filter(p => p.status === 'paid' && p.payment_date)
-        .sort((a,b) => new Date(b.payment_date) - new Date(a.payment_date))
-        .slice(0, 5);
-
-    if (!recent.length) {
-        list.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-light);">No recent transactions</div>';
-        return;
-    }
-
-    list.innerHTML = recent.map(p => `
+// ── RECENT TRANSACTIONS ───────────────────────────────────────────────────────
+function renderRecent() {
+    const list = document.getElementById('recentList');
+    const rec  = [...allData].filter(p=>p.payment_date)
+                             .sort((a,b)=>new Date(b.payment_date)-new Date(a.payment_date))
+                             .slice(0,5);
+    if (!rec.length) { list.innerHTML='<div style="padding:20px;text-align:center;color:var(--text-light)">No transactions</div>'; return; }
+    list.innerHTML = rec.map(p=>`
         <div class="member-item">
             <div class="member-info">
                 <div class="member-avatar">${initials(p.resident_name)}</div>
                 <div class="member-details">
-                    <h4>${p.resident_name}
-                        <span class="source-badge ${p.source_type}" style="margin-left:8px; font-size:.65rem;">
-                            ${cap(p.source_type)}
-                        </span>
-                    </h4>
+                    <h4>${p.resident_name} <span class="src-badge ${p.source_type}" style="font-size:.62rem">${cap(p.source_type)}</span></h4>
                     <span>${p.payment_type} · ${p.flat}</span>
                 </div>
             </div>
-            <div style="display:flex; align-items:center; gap:15px;">
-                <span style="font-weight:700; color:var(--success);">${fmt(p.amount)}</span>
-                <span style="font-size:.75rem; color:var(--text-light);">${fmtDate(p.payment_date)}</span>
-                <button class="btn-icon" onclick="viewResidentHistoryById(${p.resident_id},'${p.resident_name}')" title="History">
+            <div style="display:flex;align-items:center;gap:12px;">
+                <span style="font-weight:800;color:var(--success,#27ae60)">${fmt(p.amount)}</span>
+                <span style="font-size:.73rem;color:var(--text-light)">${fmtDate(p.payment_date)}</span>
+                <button class="btn-icon" onclick="openHistoryFor(${p.resident_id},'${p.resident_name.replace(/'/g,"\\'")}')">
                     <i class="fas fa-history"></i>
                 </button>
             </div>
-        </div>
-    `).join('');
+        </div>`).join('');
 }
 
-// ── VIEW PAYMENT ─────────────────────────────────────────────────────────────
-function viewPayment(invoiceId) {
-    const p = paymentData.find(x => x.invoice_id === invoiceId);
+function showAll() {
+    activeSrc='';
+    document.querySelectorAll('.tab-btn[data-src]').forEach(b=>b.classList.remove('active'));
+    document.querySelector('[data-src=""]').classList.add('active');
+    document.getElementById('statusFilter').value='';
+    document.getElementById('monthFilter').value='';
+    document.getElementById('srchBox').value='';
+    applyFilters();
+    window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ── VIEW PAYMENT ──────────────────────────────────────────────────────────────
+const SRC_COLOR = { maintenance:'var(--primary,#3498db)', event:'#8e44ad', booking:'#d35400', penalty:'#c0392b' };
+
+function viewPayment(invId) {
+    const p = allData.find(x=>x.invoice_id===invId);
     if (!p) return;
-    currentPaymentId = p.id;
+    curViewId   = p.id;
+    curUserId   = p.resident_id;
+    curUserName = p.resident_name;
 
-    const isEditable = p.source_type === 'maintenance';
-    document.getElementById('editFromViewBtn').style.display = isEditable ? '' : 'none';
+    // document.getElementById('editFromViewBtn').style.display = p.source_type==='maintenance' ? '' : 'none';
 
-    const sourceColors = { maintenance:'var(--primary)', event:'#8e44ad', booking:'#d35400' };
-
-    document.getElementById('viewPaymentBody').innerHTML = `
-        <div style="display:flex; align-items:center; gap:20px; margin-bottom:24px;">
-            <div style="width:72px; height:72px; border-radius:16px; background:${sourceColors[p.source_type]}; display:flex; align-items:center; justify-content:center; color:#fff; font-size:1.4rem; font-weight:700;">
-                <i class="fas fa-${sourceIcon[p.source_type]}"></i>
+    document.getElementById('viewBody').innerHTML = `
+        <div style="display:flex;align-items:center;gap:18px;margin-bottom:22px;">
+            <div style="width:66px;height:66px;border-radius:14px;background:${SRC_COLOR[p.source_type]};
+                 display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;">
+                <i class="fas fa-${SRC_ICON[p.source_type]}"></i>
             </div>
             <div>
-                <h2 style="color:var(--text-dark); margin-bottom:6px;">${p.invoice_id}</h2>
-                <span class="source-badge ${p.source_type}" style="margin-right:8px;">${cap(p.source_type)}</span>
+                <h2 style="margin-bottom:6px;">${p.invoice_id}</h2>
+                <span class="src-badge ${p.source_type}" style="margin-right:8px;">${cap(p.source_type)}</span>
                 <span class="status-badge ${p.status}">${cap(p.status)}</span>
             </div>
         </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div style="background:var(--light-bg,#f5f7fa);padding:16px;border-radius:12px;">
+                <h4 style="margin-bottom:10px;"><i class="fas fa-user" style="color:var(--primary)"></i> Resident</h4>
+                <p><b>Name:</b> ${p.resident_name}</p>
+                <p><b>Flat:</b> ${p.flat}</p>
+                <p><b>UID:</b> ${p.resident_id}</p>
+            </div>
+            <div style="background:var(--light-bg,#f5f7fa);padding:16px;border-radius:12px;">
+                <h4 style="margin-bottom:10px;"><i class="fas fa-receipt" style="color:var(--primary)"></i> Payment</h4>
+                <p><b>Type:</b> ${p.payment_type}</p>
+                <p><b>Amount:</b> <span style="font-size:1.1rem;font-weight:800;color:#27ae60;">${fmt(p.amount)}</span></p>
+                <p><b>Paid on:</b> ${fmtLong(p.payment_date)}</p>
+                <p><b>Due date:</b> ${fmtLong(p.due_date)}</p>
+            </div>
+            <div style="background:var(--light-bg,#f5f7fa);padding:16px;border-radius:12px;">
+                <h4 style="margin-bottom:10px;"><i class="fas fa-credit-card" style="color:var(--primary)"></i> Transaction</h4>
+                <p><b>Method:</b> ${p.payment_method||'–'}</p>
+                <p><b>Ref ID:</b> ${p.transaction_id||'–'}</p>
+            </div>
+            <div style="background:var(--light-bg,#f5f7fa);padding:16px;border-radius:12px;">
+                <h4 style="margin-bottom:10px;"><i class="fas fa-file-alt" style="color:var(--primary)"></i> Description</h4>
+                <p style="color:var(--text-light,#888);">${p.description||'–'}</p>
+            </div>
+        </div>`;
 
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
-            <div style="background:var(--light-bg); padding:18px; border-radius:12px;">
-                <h4 style="margin-bottom:12px;"><i class="fas fa-user" style="color:var(--primary)"></i> Resident</h4>
-                <p><strong>Name:</strong> ${p.resident_name}</p>
-                <p><strong>Flat:</strong> ${p.flat}</p>
-            </div>
-            <div style="background:var(--light-bg); padding:18px; border-radius:12px;">
-                <h4 style="margin-bottom:12px;"><i class="fas fa-receipt" style="color:var(--primary)"></i> Payment</h4>
-                <p><strong>Type:</strong> ${p.payment_type}</p>
-                <p><strong>Amount:</strong> <span style="font-size:1.15rem; font-weight:800; color:var(--success);">${fmt(p.amount)}</span></p>
-                <p><strong>Date:</strong> ${fmtDateLong(p.payment_date)}</p>
-                <p><strong>Due:</strong> ${fmtDateLong(p.due_date)}</p>
-            </div>
-            <div style="background:var(--light-bg); padding:18px; border-radius:12px;">
-                <h4 style="margin-bottom:12px;"><i class="fas fa-credit-card" style="color:var(--primary)"></i> Transaction</h4>
-                <p><strong>Method:</strong> ${p.payment_method || '–'}</p>
-                <p><strong>Ref ID:</strong> ${p.transaction_id || '–'}</p>
-            </div>
-            <div style="background:var(--light-bg); padding:18px; border-radius:12px;">
-                <h4 style="margin-bottom:12px;"><i class="fas fa-file-alt" style="color:var(--primary)"></i> Description</h4>
-                <p style="color:var(--text-light);">${p.description || 'No description'}</p>
-            </div>
-        </div>
-    `;
-
-    // stash resident info for history
-    document.getElementById('historyFromViewBtn').setAttribute('data-rid', p.resident_id);
-    document.getElementById('historyFromViewBtn').setAttribute('data-rname', p.resident_name);
-
-    openModal('viewPaymentModal');
+    openModal('viewModal');
 }
 
-function viewResidentHistory() {
-    const btn = document.getElementById('historyFromViewBtn');
-    viewResidentHistoryById(btn.getAttribute('data-rid'), btn.getAttribute('data-rname'));
+// function editFromView() {
+//     closeModal('viewModal');
+//     const p = allData.find(x=>x.id==curViewId && x.source_type==='maintenance');
+//     if (p) editPayment(p.invoice_id);
+// }
+
+function showUserHistory() {
+    closeModal('viewModal');
+    openHistoryFor(curUserId, curUserName);
 }
 
-// ── RESIDENT HISTORY ─────────────────────────────────────────────────────────
-function viewResidentHistoryById(residentId, residentName) {
-    closeModal('viewPaymentModal');
-    document.getElementById('historyResidentName').textContent = residentName || '';
-
-    historyAll = paymentData.filter(p => String(p.resident_id) === String(residentId));
-    renderHistoryList('');
+// ── HISTORY ───────────────────────────────────────────────────────────────────
+function openHistoryFor(uid, uname) {
+    curUserId   = uid;
+    curUserName = uname;
+    document.getElementById('hName').textContent = uname;
+    histData = allData.filter(p=>String(p.resident_id)===String(uid));
+    renderHistory('');
+    // reset tab
+    document.querySelectorAll('#hFilterBtns .tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelector('#hFilterBtns [data-hsrc=""]').classList.add('active');
     openModal('historyModal');
 }
 
-function filterHistory(source) {
-    renderHistoryList(source);
+function filterHistory(btn, src) {
+    document.querySelectorAll('#hFilterBtns .tab-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    renderHistory(src);
 }
 
-function renderHistoryList(source) {
-    const list   = document.getElementById('historyList');
-    const items  = source ? historyAll.filter(p => p.source_type === source) : historyAll;
-
+function renderHistory(src) {
+    const list  = document.getElementById('hList');
+    const items = src ? histData.filter(p=>p.source_type===src) : histData;
     if (!items.length) {
-        list.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>No transactions found for this filter.</div>';
+        list.innerHTML='<div class="empty-state"><i class="fas fa-inbox"></i>No transactions for this filter.</div>';
         return;
     }
-
-    const dotClass = { maintenance:'paid', event:'event', booking:'booking' };
-
-    list.innerHTML = items.map(p => `
+    list.innerHTML = items.map(p=>`
         <div class="history-item">
-            <div class="history-dot ${p.source_type === 'event' ? 'event' : p.source_type === 'booking' ? 'booking' : p.status}">
-                <i class="fas fa-${sourceIcon[p.source_type] || 'circle'}"></i>
-            </div>
-            <div class="history-body">
+            <div class="h-dot ${p.source_type}"><i class="fas fa-${SRC_ICON[p.source_type]||'circle'}"></i></div>
+            <div class="h-body">
                 <h4>${p.payment_type}</h4>
-                <p>
-                    ${p.invoice_id} &nbsp;·&nbsp;
-                    <span class="status-badge ${p.status}" style="font-size:.68rem; padding:2px 8px;">${cap(p.status)}</span>
-                    &nbsp;·&nbsp; ${fmtDate(p.payment_date || p.due_date)}
+                <p>${p.invoice_id}
+                   &nbsp;·&nbsp; <span class="status-badge ${p.status}" style="font-size:.65rem;padding:1px 7px;">${cap(p.status)}</span>
+                   &nbsp;·&nbsp; ${fmtDate(p.payment_date||p.due_date)}
                 </p>
-                ${p.description ? `<p style="margin-top:3px; font-style:italic;">${p.description}</p>` : ''}
+                ${p.description ? `<p style="margin-top:3px;font-style:italic;font-size:.74rem;">${p.description}</p>` : ''}
             </div>
-            <span class="history-amount positive">${fmt(p.amount)}</span>
-        </div>
-    `).join('');
+            <span class="h-amount">${fmt(p.amount)}</span>
+        </div>`).join('');
 }
 
-function viewAllTransactions() {
-    // reset filters & show all
-    activeSource = '';
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelector('[data-source=""]').classList.add('active');
-    document.getElementById('statusFilter').value = '';
-    document.getElementById('monthFilter').value  = '';
-    document.getElementById('paymentSearch').value = '';
-    filterPayments();
-    window.scrollTo({ top: 0, behavior:'smooth' });
+// ── ADD / EDIT ─────────────────────────────────────────────────────────────────
+function openAddModal() {
+    document.getElementById('fmTitle').textContent='Record Payment';
+    document.getElementById('payForm').reset();
+    // document.getElementById('editId').value='';
+    document.getElementById('fDate').value = new Date().toISOString().split('T')[0];
+    openModal('payFormModal');
 }
 
-// ── CRUD ─────────────────────────────────────────────────────────────────────
-function openAddPaymentModal() {
-    document.getElementById('formModalTitle').textContent = 'Record Payment';
-    document.getElementById('paymentForm').reset();
-    document.getElementById('paymentId').value = '';
-    document.getElementById('paymentDate').value = new Date().toISOString().split('T')[0];
-    const nd = new Date(); nd.setMonth(nd.getMonth()+1); nd.setDate(10);
-    document.getElementById('dueDate').value = nd.toISOString().split('T')[0];
-    currentPaymentId = null;
-    openModal('paymentFormModal');
+function fillFlat(sel) {
+    document.getElementById('fFlat').value = sel.options[sel.selectedIndex]?.dataset.flat||'';
 }
 
-function onResidentChange(sel) {
-    const opt = sel.options[sel.selectedIndex];
-    document.getElementById('flatNumber').value = opt.dataset.flat || '';
-}
-
-function editPayment(invoiceId) {
-    const p = paymentData.find(x => x.invoice_id === invoiceId && x.source_type === 'maintenance');
-    if (!p) { showNotification('Only manual payments can be edited here.', 'info'); return; }
-    currentPaymentId = p.id;
-    document.getElementById('formModalTitle').textContent = 'Edit Payment';
-    document.getElementById('paymentId').value   = p.id;
-    document.getElementById('residentId').value  = p.resident_id;
-    document.getElementById('flatNumber').value  = p.flat;
-    document.getElementById('paymentType').value = p.payment_type;
-    document.getElementById('amount').value      = p.amount;
-    document.getElementById('paymentDate').value = p.payment_date;
-    document.getElementById('dueDate').value     = p.due_date;
-    document.getElementById('paymentMethod').value = p.payment_method;
-    document.getElementById('transactionId').value = p.transaction_id;
-    document.getElementById('description').value   = p.description;
-    document.getElementById('status').value        = p.status;
-    openModal('paymentFormModal');
-}
-
-function editFromView() {
-    closeModal('viewPaymentModal');
-    const p = paymentData.find(x => String(x.id) === String(currentPaymentId));
-    if (p) editPayment(p.invoice_id);
-}
+// function editPayment(invId) {
+//     const p = allData.find(x=>x.invoice_id===invId && x.source_type==='maintenance');
+//     if (!p) { toast('Only maintenance payments can be edited here.','info'); return; }
+//     document.getElementById('fmTitle').textContent = 'Edit Payment';
+//     document.getElementById('editId').value  = p.id;
+//     document.getElementById('fUser').value   = p.resident_id;
+//     document.getElementById('fFlat').value   = p.flat;
+//     document.getElementById('fType').value   = 'maintenance';
+//     document.getElementById('fAmount').value = p.amount;
+//     document.getElementById('fDate').value   = p.payment_date;
+//     document.getElementById('fStatus').value = p.status;
+//     openModal('payFormModal');
+// }
 
 function savePayment() {
-    const residentSel  = document.getElementById('residentId');
-    const residentId   = residentSel.value;
-    const residentName = residentSel.options[residentSel.selectedIndex]?.text.split('(')[0].trim() || '';
-    const flatNumber   = document.getElementById('flatNumber').value;
-    const paymentType  = document.getElementById('paymentType').value;
-    const amount       = document.getElementById('amount').value;
-    const paymentDate  = document.getElementById('paymentDate').value;
-    const dueDate      = document.getElementById('dueDate').value;
-    const status       = document.getElementById('status').value;
+    const uid    = document.getElementById('fUser').value;
+    const amount = document.getElementById('fAmount').value;
+    const month  = document.getElementById('fMonth').value;
+    const year   = document.getElementById('fYear').value;
+    const status = document.getElementById('fStatus').value;
+    const type   = document.getElementById('fType').value;
 
-    if (!residentId || !paymentType || !amount || !paymentDate || !dueDate) {
-        showNotification('Please fill in all required fields.', 'error');
-        return;
-    }
+    if (!uid||!amount||!month||!year) { toast('Please fill all required fields.','error'); return; }
 
-    const payload = new FormData();
-    payload.append('resident_id',   residentId);
-    payload.append('resident_name', residentName);
-    payload.append('flat_number',   flatNumber);
-    payload.append('payment_type',  paymentType);
-    payload.append('amount',        amount);
-    payload.append('payment_date',  paymentDate);
-    payload.append('due_date',      dueDate);
-    payload.append('payment_method',document.getElementById('paymentMethod').value);
-    payload.append('transaction_id',document.getElementById('transactionId').value);
-    payload.append('description',   document.getElementById('description').value);
-    payload.append('status',        status);
+    const form = new FormData();
+    form.append('user_id',      uid);
+    form.append('amount',       amount);
+    form.append('payment_type', type);
+    form.append('month',        month);
+    form.append('year',         year);
+    form.append('status',       status);
+    form.append('payment_date', document.getElementById('fDate').value);
+    form.append('order_id',     document.getElementById('fOrderId').value);
+    form.append('payment_id',   document.getElementById('fPaymentId').value);
 
-    const paymentId = document.getElementById('paymentId').value;
-    const url = paymentId
-        ? BASE_URL + 'Payment_controllerr/edit_payment/' + paymentId
-        : BASE_URL + 'Payment_controllerr/add_payment';
+    // const id  = document.getElementById('editId').value;
+    const url = id
+        ? BASE+'payment_controllerr/edit_payment/'+id
+        : BASE+'payment_controllerr/add_payment';
 
-    fetch(url, { method:'POST', body:payload })
-        .then(r => r.json())
-        .then(res => {
-            if (res.success) {
-                showNotification(res.message, 'success');
-                closeModal('paymentFormModal');
-                refreshTable();
-            } else {
-                showNotification(res.message || 'Failed to save.', 'error');
-            }
+    fetch(url,{method:'POST',body:form})
+        .then(r=>r.json())
+        .then(res=>{
+            toast(res.message, res.success?'success':'error');
+            if (res.success){ closeModal('payFormModal'); refreshData(); }
         })
-        .catch(() => showNotification('Network error.', 'error'));
+        .catch(()=>toast('Network error','error'));
 }
 
-function deletePayment(id) {
-    deleteId = id;
-    openModal('deleteModal');
-}
+// ── DELETE ────────────────────────────────────────────────────────────────────
+function deletePayment(id) { deleteId=id; openModal('deleteModal'); }
 
 function confirmDelete() {
     if (!deleteId) return;
-    fetch(BASE_URL + 'Payment_controllerr/delete_payment/' + deleteId, { method:'POST' })
-        .then(r => r.json())
-        .then(res => {
-            showNotification(res.success ? 'Payment deleted.' : 'Failed to delete.', res.success ? 'info' : 'error');
+    fetch(BASE+'payment_controllerr/delete_payment/'+deleteId,{method:'POST'})
+        .then(r=>r.json())
+        .then(res=>{
+            toast(res.message, res.success?'info':'error');
             closeModal('deleteModal');
-            if (res.success) refreshTable();
+            if (res.success) refreshData();
         })
-        .catch(() => showNotification('Network error.', 'error'));
+        .catch(()=>toast('Network error','error'));
 }
 
-// ── UTILITIES ────────────────────────────────────────────────────────────────
-function refreshTable() {
-    fetch(BASE_URL + 'Payment_controllerr/get_payments_ajax', { method:'POST' })
-        .then(r => r.json())
-        .then(res => {
-            if (res.success) {
-                paymentData = res.data;
-                filterPayments();
-                loadRecentTransactions();
-                initPaymentChart();
-                showNotification('Data refreshed!', 'success');
-            }
+// ── REFRESH via AJAX ──────────────────────────────────────────────────────────
+function refreshData() {
+    fetch(BASE+'payment_controllerr/get_payments_ajax',{method:'POST'})
+        .then(r=>r.json())
+        .then(res=>{
+            if (res.success){ allData=res.data; applyFilters(); renderRecent(); toast('Refreshed!','success'); }
         })
-        .catch(() => {
-            // fallback: just re-render existing data
-            filterPayments();
-            loadRecentTransactions();
-        });
+        .catch(()=>{ applyFilters(); renderRecent(); });
 }
 
-function exportPayments() {
-    window.location.href = BASE_URL + 'Payment_controllerr/export_payments';
-}
+function exportCSV() { window.location.href=BASE+'payment_controllerr/export_payments'; }
 
-function showNotification(message, type = 'success') {
-    const icons = { success:'check-circle', error:'exclamation-circle', info:'info-circle', warning:'exclamation-triangle' };
-    const n = document.createElement('div');
-    n.className = `notification ${type}`;
-    n.innerHTML = `<i class="fas fa-${icons[type]||'info-circle'}"></i><span>${message}</span>`;
-    document.body.appendChild(n);
-    setTimeout(() => { n.style.animation = 'slideOut .3s ease'; setTimeout(() => n.remove(), 300); }, 3000);
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function toast(msg, type='success') {
+    const icons={success:'check-circle',error:'exclamation-circle',info:'info-circle'};
+    const el=document.createElement('div');
+    el.className=`notification ${type}`;
+    el.innerHTML=`<i class="fas fa-${icons[type]||'info-circle'}"></i><span>${msg}</span>`;
+    document.body.appendChild(el);
+    setTimeout(()=>{ el.style.animation='slideOut .3s ease'; setTimeout(()=>el.remove(),300); },3000);
 }
 
 function openModal(id)  { document.getElementById(id)?.classList.add('active'); }
 function closeModal(id) { document.getElementById(id)?.classList.remove('active'); }
 
-// ── INIT ─────────────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-    filterPayments();
-    loadRecentTransactions();
-    setTimeout(initPaymentChart, 200);
+// ── INIT ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',()=>{
+    renderTable();
+    renderRecent();
+    setTimeout(initChart, 150);
 
-    // Close modals on outside click
-    document.querySelectorAll('.modal').forEach(m => {
-        m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); });
+    document.querySelectorAll('.modal').forEach(m=>{
+        m.addEventListener('click',e=>{ if(e.target===m) closeModal(m.id); });
     });
-    document.addEventListener('keydown', e => {
-        if (e.key === 'Escape') document.querySelectorAll('.modal.active').forEach(m => closeModal(m.id));
+    document.addEventListener('keydown',e=>{
+        if(e.key==='Escape') document.querySelectorAll('.modal.active').forEach(m=>closeModal(m.id));
     });
 
-    // Sidebar collapse
-    const collapseBtn = document.getElementById('collapseBtn');
-    if (collapseBtn) {
-        collapseBtn.addEventListener('click', () => {
-            ['sidebar','header','main'].forEach(id => {
-                document.getElementById(id)?.classList.toggle('collapsed');
-            });
-        });
-    }
+    const cb = document.getElementById('collapseBtn');
+    if (cb) cb.addEventListener('click',()=>{
+        ['sidebar','header','main'].forEach(id=>document.getElementById(id)?.classList.toggle('collapsed'));
+    });
 });
 
-window.addEventListener('resize', () => {
-    clearTimeout(window._chartTimer);
-    window._chartTimer = setTimeout(() => window._payChart?.resize(), 250);
+window.addEventListener('resize',()=>{
+    clearTimeout(window._cr);
+    window._cr=setTimeout(()=>window._chart?.resize(),250);
 });
 </script>
 </body>

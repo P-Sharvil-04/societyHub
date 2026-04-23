@@ -40,7 +40,6 @@
 			width: 100%;
 		}
 
-		/* ── Page header ── */
 		.page-header {
 			text-align: center;
 			margin-bottom: 24px;
@@ -59,7 +58,6 @@
 			margin: 0;
 		}
 
-		/* ── Step indicators ── */
 		.steps {
 			display: flex;
 			align-items: center;
@@ -124,7 +122,6 @@
 			background: var(--green);
 		}
 
-		/* ── Form card ── */
 		.form-card {
 			background: #fff;
 			padding: 32px;
@@ -133,7 +130,6 @@
 			border: 1px solid var(--border);
 		}
 
-		/* ── Section divider ── */
 		.section-title {
 			display: flex;
 			align-items: center;
@@ -154,7 +150,6 @@
 			background: var(--border);
 		}
 
-		/* ── Two-col layout ── */
 		.form-grid {
 			display: grid;
 			grid-template-columns: 1fr;
@@ -207,10 +202,22 @@
 		}
 
 		/* ── Map ── */
-		#map {
+		.map-container {
+			position: relative;
 			height: 300px;
 			border-radius: 12px;
 			border: 1.5px solid var(--border);
+			overflow: hidden;
+		}
+
+		#map {
+			height: 100%;
+			width: 100%;
+			border-radius: 12px;
+		}
+
+		.leaflet-container {
+			font-family: Inter, sans-serif;
 		}
 
 		#posInfo {
@@ -220,40 +227,55 @@
 			font-size: .8rem;
 		}
 
-		/* ── Suggestions ── */
-		.suggestions {
+		/* ── Address autocomplete ── */
+		.ac-wrap {
+			position: relative;
+		}
+
+		.ac-dropdown {
 			position: absolute;
 			top: calc(100% + 4px);
 			left: 0;
 			right: 0;
+			z-index: 99999;
 			background: #fff;
-			border: 1px solid var(--border);
-			border-radius: 10px;
-			z-index: 999;
+			border: 1.5px solid var(--primary);
+			border-radius: 12px;
+			box-shadow: 0 12px 36px rgba(0, 0, 0, .14);
+			overflow: hidden;
 			max-height: 220px;
 			overflow-y: auto;
-			box-shadow: 0 8px 24px rgba(0, 0, 0, .1);
 		}
 
-		.suggestion {
+		.ac-item {
 			padding: 10px 14px;
-			font-size: .82rem;
 			cursor: pointer;
-			border-bottom: 1px solid #f0f4f8;
-			color: var(--text);
+			border-bottom: 1px solid var(--border);
+			transition: background .12s;
 		}
 
-		.suggestion:hover {
-			background: #eff6ff;
-		}
-
-		.suggestion:last-child {
+		.ac-item:last-child {
 			border-bottom: none;
 		}
 
-		/* ════════════════════════════════════════════
-		   WING CONFIGURATION SECTION
-		════════════════════════════════════════════ */
+		.ac-item:hover,
+		.ac-item.ac-active {
+			background: #eff6ff;
+		}
+
+		.ac-item .ac-main {
+			color: var(--text);
+			font-size: .82rem;
+			font-weight: 600;
+		}
+
+		.ac-item .ac-sub {
+			color: var(--text-light);
+			font-size: .70rem;
+			margin-top: 2px;
+		}
+
+		/* ── Wing config ── */
 		#structureSection {
 			display: none;
 			margin-top: 4px;
@@ -369,7 +391,6 @@
 			margin-top: 4px;
 		}
 
-		/* ── Total flats preview bar ── */
 		.total-preview-bar {
 			display: flex;
 			align-items: center;
@@ -401,7 +422,6 @@
 			margin-top: 2px;
 		}
 
-		/* ── Sample flat preview ── */
 		.sample-flats {
 			display: flex;
 			flex-wrap: wrap;
@@ -420,7 +440,6 @@
 			font-family: monospace;
 		}
 
-		/* ── Help tip ── */
 		.help-tip {
 			background: #eff6ff;
 			border: 1px solid #bfdbfe;
@@ -439,7 +458,6 @@
 			flex-shrink: 0;
 		}
 
-		/* ── Buttons ── */
 		.btn-register {
 			background: linear-gradient(135deg, var(--primary), var(--primary-dark));
 			color: #fff;
@@ -482,7 +500,6 @@
 			background: #eff6ff;
 		}
 
-		/* ── Error ── */
 		.error-text {
 			color: #e74c3c;
 			margin-bottom: 14px;
@@ -492,7 +509,6 @@
 			font-size: .84rem;
 		}
 
-		/* ── Spinner ── */
 		@keyframes sp {
 			to {
 				transform: rotate(360deg);
@@ -510,19 +526,25 @@
 			vertical-align: middle;
 			margin-right: 4px;
 		}
+
+		/* searching indicator */
+		.ac-searching {
+			padding: 10px 14px;
+			color: var(--text-light);
+			font-size: .80rem;
+			font-style: italic;
+		}
 	</style>
 </head>
 
 <body>
 	<div class="register-container">
 
-		<!-- Page header -->
 		<div class="page-header">
 			<h1><i class="fas fa-building" style="color:var(--primary);margin-right:8px;"></i>Register Your Society</h1>
-			<p>Fill in the society details, configure wings & floors — all flats will be auto-generated.</p>
+			<p>Fill in the society details, configure wings &amp; floors — all flats will be auto-generated.</p>
 		</div>
 
-		<!-- Step indicators -->
 		<div class="steps">
 			<div class="step-item active">
 				<div class="step-circle">1</div>
@@ -531,7 +553,7 @@
 			<div class="step-line"></div>
 			<div class="step-item active">
 				<div class="step-circle">2</div>
-				<span>Wing & Floor Setup</span>
+				<span>Wing &amp; Floor Setup</span>
 			</div>
 			<div class="step-line"></div>
 			<div class="step-item">
@@ -549,17 +571,17 @@
 			<form method="post" action="<?= site_url('plan_controller/register_society') ?>" id="registerForm">
 
 				<div class="form-grid">
-					<!-- ══ LEFT COLUMN ══ -->
-					<div>
 
+					<!-- ══════════════ LEFT COLUMN ══════════════ -->
+					<div>
 						<div class="section-title">Society Details</div>
 
 						<div class="form-group">
 							<label for="societyName">Society Name <span class="req">*</span></label>
-							<div style="display:flex;gap:8px;position:relative;">
+							<div style="display:flex;gap:8px;">
 								<input type="text" id="societyName" name="societyName" required class="form-control"
 									placeholder="e.g. Sunshine Apartments" value="<?= set_value('societyName') ?>">
-								<button type="button" id="locateSocietyBtn" title="Search on map"
+								<button type="button" id="locateSocietyBtn" title="Search society on map"
 									style="padding:10px 13px;border-radius:10px;border:1.5px solid var(--border);background:#f9fafc;cursor:pointer;color:var(--primary);flex-shrink:0;">
 									<i class="fas fa-search-location"></i>
 								</button>
@@ -573,13 +595,9 @@
 								<option value="">Select type</option>
 								<option value="flat" <?= set_select('societyType', 'flat') ?>>Flat</option>
 								<option value="bungalow" <?= set_select('societyType', 'bungalow') ?>>Bungalow</option>
-								<option value="tenement" <?= set_select('societyType', 'tenement') ?>>Tenement</option>
-								<option value="villa" <?= set_select('societyType', 'villa') ?>>Villa</option>
-								<option value="plot" <?= set_select('societyType', 'plot') ?>>Plot</option>
 							</select>
 						</div>
 
-						<!-- ══ DYNAMIC: wing count / bungalow count ══ -->
 						<div id="dynamicFields"></div>
 
 						<div class="form-group">
@@ -591,18 +609,17 @@
 								value="<?= set_value('totalFlats') ?>" readonly>
 						</div>
 
-						<div class="form-group" style="position:relative;">
-							<label for="placeSearch">Search Area</label>
-							<input type="search" id="placeSearch" class="form-control"
-								placeholder="Start typing an address…" autocomplete="off">
-							<div id="suggestions" class="suggestions" style="display:none;"></div>
-						</div>
-
+						<!-- ── Address with autocomplete ── -->
 						<div class="form-group">
 							<label for="address">Address <span class="req">*</span></label>
-							<input type="text" id="address" name="address" required class="form-control"
-								value="<?= set_value('address') ?>">
+							<div class="ac-wrap">
+								<input type="text" id="address" name="address" required class="form-control"
+									autocomplete="off" placeholder="Type to search address…"
+									value="<?= set_value('address') ?>">
+								<div id="addressDropdown" class="ac-dropdown" style="display:none;"></div>
+							</div>
 						</div>
+
 						<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
 							<div class="form-group">
 								<label for="city">City <span class="req">*</span></label>
@@ -615,6 +632,7 @@
 									value="<?= set_value('state') ?>">
 							</div>
 						</div>
+
 						<div class="form-group">
 							<label for="pincode">Pincode <span class="req">*</span></label>
 							<input type="text" id="pincode" name="pincode" required pattern="[0-9]{6}"
@@ -624,7 +642,6 @@
 						<input type="hidden" name="lat" id="lat" value="<?= set_value('lat') ?>">
 						<input type="hidden" name="lng" id="lng" value="<?= set_value('lng') ?>">
 
-						<!-- Submit -->
 						<div style="display:flex;gap:10px;margin-top:16px;">
 							<button type="button" id="locateBtn" class="btn-outline">
 								<i class="fas fa-location-dot"></i> My Location
@@ -640,28 +657,23 @@
 						</div>
 					</div>
 
-					<!-- ══ RIGHT COLUMN ══ -->
+					<!-- ══════════════ RIGHT COLUMN ══════════════ -->
 					<div>
-						<!-- Map -->
-						<div id="map"></div>
-						<div id="posInfo">📍 No location selected — click on map or use "My Location"</div>
+						<div class="map-container">
+							<div id="map"></div>
+						</div>
+						<div id="posInfo">📍 Click on map, search address, or use "My Location"</div>
 
-						<!-- ══ WING / FLOOR STRUCTURE SECTION ══ -->
+						<!-- Wing Structure Section -->
 						<div id="structureSection">
 							<div class="section-title" style="margin-top:20px;">Wing &amp; Floor Configuration</div>
-
 							<div class="help-tip">
 								<i class="fas fa-lightbulb"></i>
 								<span>Configure each wing below. All flats will be <strong>auto-generated</strong> after
 									registration.
 									Use <code>{W}-{F}{U}</code> as naming format → <strong>A-101, A-102…</strong></span>
 							</div>
-
-							<div class="wing-config-list" id="wingConfigList">
-								<!-- Wing rows injected by JS -->
-							</div>
-
-							<!-- Total preview -->
+							<div class="wing-config-list" id="wingConfigList"></div>
 							<div class="total-preview-bar" id="totalPreviewBar">
 								<div class="tp-item">
 									<div class="tp-num" id="previewWings">0</div>
@@ -680,8 +692,6 @@
 									<div class="tp-lbl">Avg Units/Floor</div>
 								</div>
 							</div>
-
-							<!-- Sample flat names preview -->
 							<div style="margin-top:10px;">
 								<div
 									style="font-size:.7rem;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">
@@ -690,198 +700,344 @@
 								</div>
 								<div class="sample-flats" id="sampleFlats"></div>
 							</div>
-
-							<!-- Hidden inputs: wing structure JSON sent to controller -->
 							<input type="hidden" name="wing_structure" id="wingStructureInput" value="">
 						</div>
 					</div>
-				</div>
+
+				</div><!-- /.form-grid -->
 			</form>
 		</div>
 	</div>
 
-	<!-- Leaflet -->
+	<!-- Leaflet JS -->
 	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 	<script>
-		/* ════════════════════════════════════════════════════════════════
-		   MAP
-		════════════════════════════════════════════════════════════════ */
-		const map = L.map('map').setView([20.5937, 78.9629], 5);
-		L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
-		let marker = null;
+		/* ═══════════════════════════════════════════
+		   MAP — Leaflet + Nominatim
+		═══════════════════════════════════════════ */
+		let map, marker;
 
-		function setMarker(lat, lng) {
-			if (marker) marker.remove();
-			marker = L.marker([lat, lng], { draggable: true }).addTo(map);
-			map.setView([lat, lng], 15);
-			document.getElementById('lat').value = lat;
-			document.getElementById('lng').value = lng;
-			document.getElementById('posInfo').innerText = `📍 Selected: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-			marker.on('dragend', e => { const p = e.target.getLatLng(); setMarker(p.lat, p.lng); reverseFill(p.lat, p.lng); });
+		const latInput = document.getElementById('lat');
+		const lngInput = document.getElementById('lng');
+		const posInfo = document.getElementById('posInfo');
+		const addressInput = document.getElementById('address');
+		const cityInput = document.getElementById('city');
+		const stateInput = document.getElementById('state');
+		const pincodeInput = document.getElementById('pincode');
+		const locateBtn = document.getElementById('locateBtn');
+		const locateSocietyBtn = document.getElementById('locateSocietyBtn');
+		const societyNameInput = document.getElementById('societyName');
+
+		function setStatusText(lat, lng) {
+			posInfo.textContent = `📍 ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
 		}
-		map.on('click', e => { setMarker(e.latlng.lat, e.latlng.lng); reverseFill(e.latlng.lat, e.latlng.lng); });
 
-		document.getElementById('locateBtn').addEventListener('click', () => {
-			navigator.geolocation.getCurrentPosition(
-				pos => { setMarker(pos.coords.latitude, pos.coords.longitude); reverseFill(pos.coords.latitude, pos.coords.longitude); },
-				() => alert('Location permission denied or unavailable.')
-			);
-		});
+		function fillAddressParts(address = {}) {
+			const city = address.city || address.town || address.village || address.hamlet || address.suburb || address.county || '';
+			const state = address.state || address.region || '';
+			const pincode = address.postcode || '';
+			if (city) cityInput.value = city;
+			if (state) stateInput.value = state;
+			if (pincode) pincodeInput.value = pincode;
+		}
 
-		function reverseFill(lat, lng) {
-			const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
-			fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`)
-				.then(r => r.json()).then(d => {
-					const a = JSON.parse(d.contents).address;
-					if (a) {
-						document.getElementById('address').value = (a.road ? a.road + ' ' : '') + (a.house_number || '');
-						document.getElementById('city').value = a.city || a.town || a.village || '';
-						document.getElementById('state').value = a.state || '';
-						document.getElementById('pincode').value = a.postcode || '';
+		async function reverseGeocode(lat, lng) {
+			try {
+				const res = await fetch(
+					'https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1' +
+					'&lat=' + encodeURIComponent(lat) + '&lon=' + encodeURIComponent(lng),
+					{ headers: { 'Accept': 'application/json' } }
+				);
+				if (!res.ok) return;
+				const data = await res.json();
+				if (data && data.display_name) addressInput.value = data.display_name;
+				if (data && data.address) fillAddressParts(data.address);
+			} catch (err) {
+				console.warn('Reverse geocode failed:', err);
+			}
+		}
+
+		function setLocation(lat, lng, zoom = 16) {
+			const ll = L.latLng(lat, lng);
+			map.setView(ll, zoom);
+			marker.setLatLng(ll);
+			latInput.value = lat;
+			lngInput.value = lng;
+			setStatusText(lat, lng);
+		}
+
+		/* Set location AND fill address fields (no extra reverse-geocode needed) */
+		function setLocationWithAddress(lat, lng, displayName, addressParts, zoom = 16) {
+			setLocation(lat, lng, zoom);
+			if (displayName) addressInput.value = displayName;
+			if (addressParts) fillAddressParts(addressParts);
+		}
+
+		/* Search by society name (locate button next to name field) */
+		async function searchByName(name) {
+			try {
+				const res = await fetch(
+					'https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=1&q=' +
+					encodeURIComponent(name),
+					{ headers: { 'Accept': 'application/json' } }
+				);
+				if (!res.ok) { alert('Search failed'); return; }
+				const results = await res.json();
+				if (!results || !results.length) { alert('Location not found'); return; }
+				const place = results[0];
+				setLocationWithAddress(
+					parseFloat(place.lat), parseFloat(place.lon),
+					place.display_name, place.address, 16
+				);
+			} catch (err) {
+				console.warn('Search error:', err);
+				alert('Location search failed');
+			}
+		}
+
+		function initMap() {
+			const defaultCenter = [20.5937, 78.9629];
+			map = L.map('map', { scrollWheelZoom: true }).setView(defaultCenter, 5);
+			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+				maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'
+			}).addTo(map);
+
+			marker = L.marker(defaultCenter, { draggable: true }).addTo(map);
+
+			map.on('click', function (e) {
+				setLocation(e.latlng.lat, e.latlng.lng, 16);
+				reverseGeocode(e.latlng.lat, e.latlng.lng);
+			});
+
+			marker.on('dragend', function (e) {
+				const ll = e.target.getLatLng();
+				setLocation(ll.lat, ll.lng, 16);
+				reverseGeocode(ll.lat, ll.lng);
+			});
+
+			/* Restore saved values on validation error */
+			const savedLat = parseFloat(latInput.value);
+			const savedLng = parseFloat(lngInput.value);
+			if (!Number.isNaN(savedLat) && !Number.isNaN(savedLng)) {
+				setLocation(savedLat, savedLng, 16);
+			}
+
+			/* My Location */
+			locateBtn.addEventListener('click', function () {
+				if (!navigator.geolocation) { alert('Geolocation not supported'); return; }
+				navigator.geolocation.getCurrentPosition(
+					function (pos) {
+						setLocation(pos.coords.latitude, pos.coords.longitude, 16);
+						reverseGeocode(pos.coords.latitude, pos.coords.longitude);
+					},
+					function () { alert('Unable to retrieve your location.'); }
+				);
+			});
+
+			/* Search by society name */
+			locateSocietyBtn.addEventListener('click', function () {
+				const name = (societyNameInput.value || '').trim();
+				if (name.length < 3) { alert('Enter society name first'); return; }
+				searchByName(name);
+			});
+		}
+
+		window.addEventListener('load', initMap);
+
+
+		/* ═══════════════════════════════════════════
+		   ADDRESS AUTOCOMPLETE (Nominatim)
+		   — same pattern as the ride-booking view —
+		═══════════════════════════════════════════ */
+		(function () {
+			const input = document.getElementById('address');
+			const dropdown = document.getElementById('addressDropdown');
+			let timer = null;
+			let activeIdx = -1;
+
+			function escHtml(s) {
+				return String(s)
+					.replace(/&/g, '&amp;')
+					.replace(/</g, '&lt;')
+					.replace(/>/g, '&gt;');
+			}
+
+			function hideDropdown() {
+				dropdown.style.display = 'none';
+				dropdown.innerHTML = '';
+				activeIdx = -1;
+			}
+
+			function highlightItem(items, idx) {
+				items.forEach(function (el, i) {
+					el.classList.toggle('ac-active', i === idx);
+				});
+			}
+
+			function renderDropdown(items) {
+				dropdown.innerHTML = '';
+				if (!items.length) { hideDropdown(); return; }
+
+				items.forEach(function (item) {
+					const div = document.createElement('div');
+					div.className = 'ac-item';
+					const parts = item.display_name.split(', ');
+					const main = escHtml(parts.slice(0, 2).join(', '));
+					const sub = escHtml(parts.slice(2).join(', '));
+					div.innerHTML =
+						'<div class="ac-main">' + main + '</div>' +
+						(sub ? '<div class="ac-sub">' + sub + '</div>' : '');
+
+					div.addEventListener('mousedown', function (e) {
+						e.preventDefault();
+						/* Fill the input immediately */
+						input.value = item.display_name;
+						hideDropdown();
+
+						/* Move map + fill city / state / pincode */
+						const lat = parseFloat(item.lat);
+						const lng = parseFloat(item.lon);
+						setLocationWithAddress(lat, lng, item.display_name, item.address, 16);
+					});
+
+					dropdown.appendChild(div);
+				});
+
+				dropdown.style.display = 'block';
+			}
+
+			function showSearching() {
+				dropdown.innerHTML = '<div class="ac-searching"><i class="fas fa-circle-notch fa-spin" style="color:var(--primary);margin-right:6px;"></i>Searching…</div>';
+				dropdown.style.display = 'block';
+			}
+
+			input.addEventListener('input', function () {
+				clearTimeout(timer);
+				const val = this.value.trim();
+				activeIdx = -1;
+
+				if (val.length < 3) { hideDropdown(); return; }
+
+				showSearching();
+
+				timer = setTimeout(function () {
+					fetch(
+						'https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=6&q=' +
+						encodeURIComponent(val),
+						{ headers: { 'Accept': 'application/json' } }
+					)
+						.then(function (r) { return r.json(); })
+						.then(function (data) { renderDropdown(data || []); })
+						.catch(function () { hideDropdown(); });
+				}, 350);
+			});
+
+			input.addEventListener('keydown', function (e) {
+				const items = dropdown.querySelectorAll('.ac-item');
+				if (!items.length) return;
+
+				if (e.key === 'ArrowDown') {
+					e.preventDefault();
+					activeIdx = Math.min(activeIdx + 1, items.length - 1);
+					highlightItem(items, activeIdx);
+				} else if (e.key === 'ArrowUp') {
+					e.preventDefault();
+					activeIdx = Math.max(activeIdx - 1, 0);
+					highlightItem(items, activeIdx);
+				} else if (e.key === 'Enter') {
+					e.preventDefault();
+					if (activeIdx >= 0 && items[activeIdx]) {
+						items[activeIdx].dispatchEvent(new MouseEvent('mousedown'));
 					}
-				}).catch(() => { });
-		}
+				} else if (e.key === 'Escape') {
+					hideDropdown();
+				}
+			});
 
-		/* Place search autocomplete */
-		const searchInput = document.getElementById('placeSearch');
-		const sugDiv = document.getElementById('suggestions');
-		let searchTimer;
-		searchInput.addEventListener('input', function () {
-			const q = this.value.trim();
-			if (q.length < 3) { sugDiv.style.display = 'none'; return; }
-			clearTimeout(searchTimer);
-			searchTimer = setTimeout(() => {
-				fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=6`)}`)
-					.then(r => r.json()).then(d => {
-						const places = JSON.parse(d.contents);
-						sugDiv.innerHTML = '';
-						if (!places.length) { sugDiv.style.display = 'none'; return; }
-						places.forEach(p => {
-							const div = document.createElement('div'); div.className = 'suggestion';
-							div.textContent = p.display_name;
-							div.addEventListener('click', () => {
-								searchInput.value = p.display_name; sugDiv.style.display = 'none';
-								setMarker(parseFloat(p.lat), parseFloat(p.lon)); reverseFill(parseFloat(p.lat), parseFloat(p.lon));
-							});
-							sugDiv.appendChild(div);
-						});
-						sugDiv.style.display = 'block';
-					}).catch(() => { });
-			}, 300);
-		});
-		document.addEventListener('click', e => { if (!searchInput.contains(e.target) && !sugDiv.contains(e.target)) sugDiv.style.display = 'none'; });
+			/* Close dropdown when clicking outside */
+			document.addEventListener('click', function (e) {
+				if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+					hideDropdown();
+				}
+			});
+		})();
 
-		document.getElementById('locateSocietyBtn').addEventListener('click', () => {
-			const name = document.getElementById('societyName').value.trim();
-			if (name.length < 3) { alert('Enter at least 3 characters in society name first.'); return; }
-			searchInput.value = name;
-			searchInput.dispatchEvent(new Event('input'));
-			searchInput.focus();
-		});
 
-		/* ════════════════════════════════════════════════════════════════
-		   WING CONFIG ENGINE
-		════════════════════════════════════════════════════════════════ */
+		/* ═══════════════════════════════════════════
+		   WING CONFIGURATION
+		═══════════════════════════════════════════ */
 		const FT = ['1BHK', '2BHK', '3BHK', '4BHK', 'Penthouse', 'Shop', 'Office'];
 		const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-		let wingRows = [];   // array of {wingName, prefix, floors, upf, type, gf, fmt}
+		let wingRows = [];
 
-		/* Make a flat number from naming format */
 		function makeFlatNo(prefix, fmt, floor, unit) {
 			const f = floor === 0 ? 'G' : String(floor);
 			const u = String(unit).padStart(2, '0');
-			return fmt
-				.replace('{W}', prefix)
-				.replace('{F}', f)
-				.replace('{U}', u)
-				.replace('{FU}', f + u)
-				.toUpperCase();
+			return fmt.replace('{W}', prefix).replace('{F}', f).replace('{U}', u)
+				.replace('{FU}', f + u).toUpperCase();
 		}
 
 		function calcWingTotal(floors, upf, gf) {
 			return (parseInt(floors) || 0) * (parseInt(upf) || 0) + (gf ? (parseInt(upf) || 0) : 0);
 		}
 
-		/* Render all wing config rows */
 		function renderWingRows(count) {
 			const list = document.getElementById('wingConfigList');
 			list.innerHTML = '';
-
-			// Pad / trim wingRows array to match count
 			while (wingRows.length < count) {
 				const i = wingRows.length;
 				wingRows.push({
 					wingName: LETTERS[i] || ('Wing' + (i + 1)),
 					prefix: LETTERS[i] || ('W' + (i + 1)),
-					floors: 4,
-					upf: 4,
-					type: '2BHK',
-					gf: false,
-					fmt: '{W}-{F}{U}',
+					floors: 4, upf: 4, type: '2BHK', gf: false, fmt: '{W}-{F}{U}',
 				});
 			}
 			wingRows.length = count;
-
-			wingRows.forEach((w, i) => {
+			wingRows.forEach(function (w, i) {
 				const row = document.createElement('div');
 				row.className = 'wing-config-row';
 				row.id = 'wcr-' + i;
 				const ftOpts = FT.map(f => `<option${f === w.type ? ' selected' : ''}>${f}</option>`).join('');
 				const sample = makeFlatNo(w.prefix, w.fmt, 1, 1);
 				const total = calcWingTotal(w.floors, w.upf, w.gf);
-
 				row.innerHTML = `
-		<div class="wing-config-header">
-			<div class="wing-badge">${w.prefix || '?'}</div>
-			<div class="wing-config-title">Wing ${w.wingName}</div>
-		</div>
-		<div class="wing-config-fields">
-			<div class="wfld">
-				<label>Wing Name</label>
-				<input type="text" value="${w.wingName}" maxlength="10" placeholder="e.g. A"
-					oninput="updateWingField(${i},'wingName',this.value);
-							 this.closest('.wing-config-row').querySelector('.wing-config-title').textContent='Wing '+this.value;">
+			<div class="wing-config-header">
+				<div class="wing-badge">${w.prefix || '?'}</div>
+				<div class="wing-config-title">Wing ${w.wingName}</div>
 			</div>
-			<div class="wfld">
-				<label>Flat Prefix</label>
-				<input type="text" value="${w.prefix}" maxlength="10" placeholder="e.g. A"
-					oninput="updateWingField(${i},'prefix',this.value.toUpperCase());
-							 this.value=this.value.toUpperCase();
-							 this.closest('.wing-config-row').querySelector('.wing-badge').textContent=this.value||'?';
-							 refreshSample(${i});">
-			</div>
-			<div class="wfld">
-				<label>No. of Floors</label>
-				<input type="number" value="${w.floors}" min="1" max="50"
-					oninput="updateWingField(${i},'floors',this.value); refreshWingTotals();">
-				<div class="flat-count-preview" id="wc-total-${i}">~${total} flats</div>
-			</div>
-			<div class="wfld">
-				<label>Units / Floor</label>
-				<input type="number" value="${w.upf}" min="1" max="50"
-					oninput="updateWingField(${i},'upf',this.value); refreshWingTotals();">
-			</div>
-			<div class="wfld">
-				<label>Flat Type</label>
-				<select oninput="updateWingField(${i},'type',this.value)">${ftOpts}</select>
-			</div>
-			<div class="wfld">
-				<label>Naming Format</label>
-				<input type="text" value="${w.fmt}" maxlength="30" placeholder="{W}-{F}{U}"
-					oninput="updateWingField(${i},'fmt',this.value); refreshSample(${i});">
-				<div class="naming-preview" id="wc-sample-${i}">${sample}</div>
-			</div>
-			<div class="wfld" style="justify-content:flex-end;padding-top:12px;">
-				<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.72rem;font-weight:600;color:var(--text-light);">
-					<input type="checkbox" ${w.gf ? 'checked' : ''}
-						onchange="updateWingField(${i},'gf',this.checked); refreshWingTotals();">
-					Ground Floor
-				</label>
-			</div>
-		</div>`;
+			<div class="wing-config-fields">
+				<div class="wfld"><label>Wing Name</label>
+					<input type="text" value="${w.wingName}" maxlength="10"
+						oninput="updateWingField(${i},'wingName',this.value);
+						this.closest('.wing-config-row').querySelector('.wing-config-title').textContent='Wing '+this.value;"></div>
+				<div class="wfld"><label>Flat Prefix</label>
+					<input type="text" value="${w.prefix}" maxlength="10"
+						oninput="updateWingField(${i},'prefix',this.value.toUpperCase());
+						this.value=this.value.toUpperCase();
+						this.closest('.wing-config-row').querySelector('.wing-badge').textContent=this.value||'?';
+						refreshSample(${i});"></div>
+				<div class="wfld"><label>No. of Floors</label>
+					<input type="number" value="${w.floors}" min="1" max="50"
+						oninput="updateWingField(${i},'floors',this.value); refreshWingTotals();">
+					<div class="flat-count-preview" id="wc-total-${i}">~${total} flats</div></div>
+				<div class="wfld"><label>Units / Floor</label>
+					<input type="number" value="${w.upf}" min="1" max="50"
+						oninput="updateWingField(${i},'upf',this.value); refreshWingTotals();"></div>
+				<div class="wfld"><label>Flat Type</label>
+					<select oninput="updateWingField(${i},'type',this.value)">${ftOpts}</select></div>
+				<div class="wfld"><label>Naming Format</label>
+					<input type="text" value="${w.fmt}" maxlength="30"
+						oninput="updateWingField(${i},'fmt',this.value); refreshSample(${i});">
+					<div class="naming-preview" id="wc-sample-${i}">${sample}</div></div>
+				<div class="wfld" style="justify-content:flex-end;padding-top:12px;">
+					<label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+						<input type="checkbox" ${w.gf ? 'checked' : ''}
+							onchange="updateWingField(${i},'gf',this.checked); refreshWingTotals();"> Ground Floor
+					</label></div>
+			</div>`;
 				list.appendChild(row);
 			});
-
 			refreshWingTotals();
 		}
 
@@ -899,30 +1055,22 @@
 		}
 
 		function refreshWingTotals() {
-			let grandTotal = 0;
-			let totalFloors = 0;
-			let totalUPF = 0;
-
-			wingRows.forEach((w, i) => {
+			let grandTotal = 0, totalFloors = 0, totalUPF = 0;
+			wingRows.forEach(function (w, i) {
 				const t = calcWingTotal(w.floors, w.upf, w.gf);
 				grandTotal += t;
 				totalFloors += parseInt(w.floors) || 0;
 				totalUPF += parseInt(w.upf) || 0;
-
 				const el = document.getElementById('wc-total-' + i);
 				if (el) el.textContent = '~' + t + ' flats';
 			});
-
 			const n = wingRows.length || 1;
 			document.getElementById('previewWings').textContent = wingRows.length;
 			document.getElementById('previewTotalFlats').textContent = grandTotal;
 			document.getElementById('previewFloors').textContent = Math.round(totalFloors / n);
 			document.getElementById('previewUPF').textContent = Math.round(totalUPF / n);
-
-			// Update totalFlats input (auto-calculated)
 			document.getElementById('totalFlats').value = grandTotal;
 
-			// Sample flat names (first 2 floors of first wing)
 			const samples = document.getElementById('sampleFlats');
 			samples.innerHTML = '';
 			if (wingRows.length > 0) {
@@ -939,74 +1087,62 @@
 				if (wingRows.length > 1) {
 					const sp = document.createElement('span');
 					sp.className = 'sample-flat';
-					sp.style.background = '#e0e7ff'; sp.style.color = '#3730a3'; sp.style.borderColor = '#c7d2fe';
+					sp.style.cssText = 'background:#e0e7ff;color:#3730a3;border-color:#c7d2fe;';
 					sp.textContent = '+ more wings…';
 					samples.appendChild(sp);
 				}
 			}
 
-			// Sync hidden JSON input
-			document.getElementById('wingStructureInput').value = JSON.stringify(wingRows.map(w => ({
-				wing_name: w.wingName,
-				wing_prefix: w.prefix,
-				floors: parseInt(w.floors) || 1,
-				units_per_floor: parseInt(w.upf) || 1,
-				flat_type: w.type,
-				has_ground_floor: w.gf ? 1 : 0,
-				naming_format: w.fmt,
-			})));
+			document.getElementById('wingStructureInput').value = JSON.stringify(
+				wingRows.map(function (w) {
+					return {
+						wing_name: w.wingName,
+						wing_prefix: w.prefix,
+						floors: parseInt(w.floors) || 1,
+						units_per_floor: parseInt(w.upf) || 1,
+						flat_type: w.type,
+						has_ground_floor: w.gf ? 1 : 0,
+						naming_format: w.fmt,
+					};
+				})
+			);
 		}
 
-		/* ════════════════════════════════════════════════════════════════
-		   SOCIETY TYPE CHANGE → show/hide wing config
-		════════════════════════════════════════════════════════════════ */
 		function handleTypeChange() {
 			const type = document.getElementById('societyType').value;
 			const dynFlds = document.getElementById('dynamicFields');
 			const strSec = document.getElementById('structureSection');
 
-			if (!type) {
-				dynFlds.innerHTML = '';
-				strSec.style.display = 'none';
-				wingRows = [];
-				return;
-			}
+			if (!type) { dynFlds.innerHTML = ''; strSec.style.display = 'none'; wingRows = []; return; }
 
 			if (type === 'bungalow') {
 				dynFlds.innerHTML = `
-		<div class="form-group">
-			<label for="number_of_bungalows">Number of Bungalows <span class="req">*</span></label>
-			<input type="number" id="number_of_bungalows" name="number_of_bungalows"
-				required min="1" class="form-control" placeholder="e.g. 10"
-				value="<?= set_value('number_of_bungalows') ?>"
-				oninput="syncBungalows(this.value)">
-		</div>`;
+			<div class="form-group">
+				<label for="number_of_bungalows">Number of Bungalows <span class="req">*</span></label>
+				<input type="number" id="number_of_bungalows" name="number_of_bungalows"
+					required min="1" class="form-control"
+					value="<?= set_value('number_of_bungalows') ?>"
+					oninput="syncBungalows(this.value)">
+			</div>`;
 				strSec.style.display = 'none';
-				// For bungalow: totalFlats = number_of_bungalows, no wings needed
 				document.getElementById('totalFlats').removeAttribute('readonly');
 				document.getElementById('totalFlats').value = '<?= set_value('totalFlats') ?>';
 				return;
 			}
 
-			// flat / tenement / villa / plot → show wing config
 			dynFlds.innerHTML = `
-	<div class="form-group">
-		<label for="number_of_wings">Number of Wings <span class="req">*</span></label>
-		<input type="number" id="number_of_wings" name="number_of_wings"
-			required min="1" max="26" class="form-control" placeholder="e.g. 3"
-			value="${wingRows.length || ''}"
-			oninput="onWingCountChange(this.value)">
-	</div>`;
-
+		<div class="form-group">
+			<label for="number_of_wings">Number of Wings <span class="req">*</span></label>
+			<input type="number" id="number_of_wings" name="number_of_wings"
+				required min="1" max="26" class="form-control"
+				value="${wingRows.length || ''}"
+				oninput="onWingCountChange(this.value)">
+		</div>`;
 			document.getElementById('totalFlats').setAttribute('readonly', 'readonly');
 
 			const existing = parseInt(document.getElementById('number_of_wings')?.value) || 0;
-			if (existing > 0) {
-				strSec.style.display = 'block';
-				renderWingRows(existing);
-			} else {
-				strSec.style.display = 'none';
-			}
+			if (existing > 0) { strSec.style.display = 'block'; renderWingRows(existing); }
+			else { strSec.style.display = 'none'; }
 		}
 
 		function onWingCountChange(val) {
@@ -1021,13 +1157,12 @@
 			document.getElementById('totalFlats').value = parseInt(val) || '';
 		}
 
-		/* ════════════════════════════════════════════════════════════════
-		   FORM SUBMIT VALIDATION
-		════════════════════════════════════════════════════════════════ */
+		/* Form submit validation */
 		document.getElementById('registerForm').addEventListener('submit', function (e) {
-			// Location required
 			if (!document.getElementById('lat').value || !document.getElementById('lng').value) {
-				e.preventDefault(); alert('Please select a location on the map or use "My Location".'); return;
+				e.preventDefault();
+				alert('Please select a location on the map, search an address, or use "My Location".');
+				return;
 			}
 
 			const type = document.getElementById('societyType').value;
@@ -1039,8 +1174,6 @@
 				const wc = document.getElementById('number_of_wings');
 				if (!wc || parseInt(wc.value) < 1) { e.preventDefault(); alert('Enter a valid number of wings.'); return; }
 				if (wingRows.length === 0) { e.preventDefault(); alert('Please configure at least one wing.'); return; }
-
-				// Validate each wing
 				for (let i = 0; i < wingRows.length; i++) {
 					const w = wingRows[i];
 					if (!w.wingName) { e.preventDefault(); alert(`Wing ${i + 1}: Name is required.`); return; }
@@ -1049,14 +1182,12 @@
 				}
 			}
 
-			// Loading state
 			const btn = document.getElementById('submitBtn');
 			btn.innerHTML = '<span class="spinner"></span> Saving…';
 			btn.disabled = true;
 		});
 
-		/* Init: restore if returning with errors */
-		document.addEventListener('DOMContentLoaded', () => {
+		document.addEventListener('DOMContentLoaded', function () {
 			const type = document.getElementById('societyType').value;
 			if (type) handleTypeChange();
 		});

@@ -13,7 +13,6 @@
     <link rel="stylesheet" href="<?= base_url('assets/css/dashboard.css') ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/flat_unit.css') ?>">
     <style>
-        /* ── inline overrides only ── */
         :root {
             --primary: #3498db;
             --primary-dark: #2980b9;
@@ -23,6 +22,89 @@
             --light-bg: #f8fafc;
         }
         body { font-family: 'Inter', sans-serif; background: #f4f7fe; }
+
+        /* ══════════════════════════
+           PAGINATION STYLES
+        ══════════════════════════ */
+        .pagination-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 14px 18px;
+            border-top: 1px solid var(--border);
+            background: var(--light-bg);
+            border-radius: 0 0 12px 12px;
+        }
+        .pagination-info {
+            font-size: .8rem;
+            color: var(--text-light);
+            font-weight: 500;
+        }
+        .pagination-info strong {
+            color: var(--text-dark);
+        }
+
+        /* CI pagination list */
+        .ci-pagination { margin: 0; }
+        .pg-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .pg-item { display: inline-flex; }
+        .pg-item a.pg-link,
+        .pg-item span.pg-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 34px;
+            height: 34px;
+            padding: 0 10px;
+            border-radius: 8px;
+            font-size: .8rem;
+            font-weight: 600;
+            text-decoration: none;
+            border: 1px solid var(--border);
+            color: var(--text-dark);
+            background: #fff;
+            transition: background .15s, color .15s, border-color .15s;
+            cursor: pointer;
+        }
+        .pg-item a.pg-link:hover {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+        .pg-item.active span.pg-link {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+            cursor: default;
+        }
+
+        /* Per-page selector */
+        .per-page-form {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: .8rem;
+            color: var(--text-light);
+        }
+        .per-page-form select {
+            padding: 4px 8px;
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            font-size: .8rem;
+            background: #fff;
+            color: var(--text-dark);
+            cursor: pointer;
+        }
+        .per-page-form select:focus { outline: none; border-color: var(--primary); }
     </style>
 </head>
 <body>
@@ -43,16 +125,6 @@
             <i class="fas fa-exclamation-circle"></i> <?= $this->session->flashdata('error') ?>
         </div>
     <?php endif; ?>
-
-    <!-- ══════ Page heading ══════ -->
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:22px;">
-     
-        <div style="display:flex;gap:10px;align-items:center;">
-            <!-- View toggle -->
-        
-           
-        </div>
-    </div>
 
     <!-- ══════ Stats ══════ -->
     <div class="stats-grid">
@@ -80,14 +152,6 @@
                 <div class="stat-trend"><?= $vacantPercent ?>% of total</div>
             </div>
         </div>
-        <!-- <div class="stat-card">
-            <div class="stat-icon red"><i class="fas fa-ban"></i></div>
-            <div class="stat-info">
-                <h4>Blocked</h4>
-                <h2><?= $blocked ?></h2>
-                <div class="stat-trend"><?= $blockedPercent ?>% of total</div>
-            </div>
-        </div> -->
         <div class="stat-card">
             <div class="stat-icon gold"><i class="fas fa-home"></i></div>
             <div class="stat-info">
@@ -205,11 +269,12 @@
                     </a>
                 <?php endif; ?>
             </div>
-   			 <div class="view-toggle-group">
-                <button class="vtbtn active" id="btnTableView" onclick="switchView('table')" title="Table View">
+
+            <div class="view-toggle-group">
+                <button class="vtbtn active" id="btnTableView" onclick="switchView('table')" title="Table View" type="button">
                     <i class="fas fa-list"></i>
                 </button>
-                <button class="vtbtn" id="btnGridView" onclick="switchView('grid')" title="Floor Grid View">
+                <button class="vtbtn" id="btnGridView" onclick="switchView('grid')" title="Floor Grid View" type="button">
                     <i class="fas fa-th"></i>
                 </button>
             </div>
@@ -259,7 +324,7 @@
                     <i class="fas fa-list"></i>
                     <?= $isSuperAdmin ? 'All Societies — Flat Directory' : 'Flat Directory' ?>
                     <small style="font-weight:400;color:var(--text-light);font-size:.78rem;">
-                        (<?= count($flats) ?> records)
+                        (<?= $totalCount ?> records)
                     </small>
                 </h3>
                 <a href="<?= site_url('flat_unit') ?>" class="btn btn-outline btn-sm">
@@ -267,17 +332,15 @@
                 </a>
                 <div class="page-actions">
                     <div class="export-wrapper">
-						 <button class="btn btn-outline" onclick="openImportModal()">
-               				<i class="fas fa-file-import"></i> Import
-            			</button>
-    
+                        <button class="btn btn-outline" onclick="openImportModal()">
+                            <i class="fas fa-file-import"></i> Import
+                        </button>
                         <button type="button" class="btn btn-outline" onclick="toggleExportMenu(event)">
                             <i class="fas fa-download"></i> Export
                         </button>
-
-						    <button class="btn btn-primary" onclick="openAddFlatModal()">
-                				<i class="fas fa-plus-circle"></i> Add Flat
-            				</button>
+                        <button class="btn btn-primary" onclick="openAddFlatModal()">
+                            <i class="fas fa-plus-circle"></i> Add Flat
+                        </button>
                         <div class="export-menu" id="exportMenu">
                             <button onclick="exportExcel()"><i class="fas fa-file-excel"></i> Excel</button>
                             <button onclick="exportCSV()"><i class="fas fa-file-csv"></i> CSV</button>
@@ -315,11 +378,15 @@
                             </td>
                         </tr>
                     <?php else: ?>
+                        <?php
+                        // Row counter starts from the first record on this page
+                        $rowStart = ($currentPage - 1) * $perPage + 1;
+                        ?>
                         <?php foreach ($flats as $i => $f): ?>
                         <?php
                             $ini = '—';
                             if (!empty($f->resident_name)) {
-                                $np = explode(' ', $f->resident_name, 2);
+                                $np  = explode(' ', $f->resident_name, 2);
                                 $ini = strtoupper(substr($np[0],0,1) . (isset($np[1]) ? substr($np[1],0,1) : ''));
                             }
                             $floorLabel = $f->floor == 0 ? 'Ground' : ordinal($f->floor);
@@ -328,7 +395,7 @@
                             if (in_array($f->flat_type, ['Shop','Office'])) $typeClass = 'shop';
                         ?>
                         <tr>
-                            <td style="color:var(--text-light);font-size:.78rem;"><?= $i+1 ?></td>
+                            <td style="color:var(--text-light);font-size:.78rem;"><?= $rowStart + $i ?></td>
                             <td>
                                 <span style="font-weight:700;color:var(--text-dark);font-size:.92rem;">
                                     <?= html_escape($f->flat_no) ?>
@@ -424,13 +491,54 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- ══════ PAGINATION FOOTER ══════ -->
+            <?php if ($totalCount > 0): ?>
+            <div class="pagination-wrapper">
+
+                <!-- Left: "Showing X – Y of Z" + per-page picker -->
+                <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+                    <div class="pagination-info">
+                        Showing <strong><?= $showFrom ?></strong> – <strong><?= $showTo ?></strong>
+                        of <strong><?= $totalCount ?></strong> records
+                    </div>
+
+                    <!-- Per-page selector (reloads page 1 with new per_page via JS) -->
+                    <div class="per-page-form">
+                        <label for="perPageSel">Rows:</label>
+                        <select id="perPageSel" onchange="changePerPage(this.value)">
+                            <?php foreach ([10, 15, 25, 50, 100] as $pp): ?>
+                                <option value="<?= $pp ?>" <?= $pp === $perPage ? 'selected' : '' ?>>
+                                    <?= $pp ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Right: page links rendered by CI Pagination -->
+                <div>
+                    <?= $paginationLinks ?>
+                </div>
+
+            </div>
+            <?php endif; ?>
+            <!-- ══════ / PAGINATION FOOTER ══════ -->
+
         </div>
     </div>
 
     <!-- ══════════════════════════════════════════════
-         FLOOR / GRID VIEW
+         FLOOR / GRID VIEW  (no pagination — shows all filtered results)
     ══════════════════════════════════════════════ -->
     <div id="gridView" style="display:none;">
+        <?php
+        /*
+         * Grid view intentionally shows ALL flats (no page limit) so every floor
+         * is visible at once. If you want pagination here too, you can add a
+         * second paginated query in the controller for grid mode.
+         */
+        ?>
         <?php if (empty($flats)): ?>
             <div style="text-align:center;padding:50px;color:var(--text-light);">
                 <i class="fas fa-building" style="font-size:2.5rem;display:block;margin-bottom:10px;opacity:.3;"></i>
@@ -438,11 +546,8 @@
             </div>
         <?php else: ?>
         <?php
-        // Group flats by floor
         $floorGroups = [];
-        foreach ($flats as $f) {
-            $floorGroups[$f->floor][] = $f;
-        }
+        foreach ($flats as $f) { $floorGroups[$f->floor][] = $f; }
         ksort($floorGroups);
         ?>
         <div class="floor-view">
@@ -507,7 +612,6 @@
                             </div>
                         </div>
                         <?php endforeach; ?>
-                        <!-- Add tile -->
                         <div class="unit-tile add-tile" onclick="openAddFlatModal(<?= $fl ?>)">
                             <div class="add-tile-icon"><i class="fas fa-plus"></i></div>
                             <div class="add-tile-lbl">Add to <?= $flLabel ?></div>
@@ -615,7 +719,6 @@
             <span class="modal-close" onclick="closeModal('viewFlatModal')">&times;</span>
         </div>
         <div class="modal-body">
-            <!-- Header row -->
             <div style="display:flex;align-items:center;gap:18px;margin-bottom:20px;padding:16px;background:#f8faff;border-radius:12px;border:1px solid #e8f0fe;">
                 <div style="width:56px;height:56px;border-radius:14px;background:#e0e7ff;color:#3730a3;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;">
                     <i class="fas fa-door-closed"></i>
@@ -675,7 +778,7 @@
                         <option value="">-- Select Member --</option>
                         <?php foreach ($unassignedMembers as $m): ?>
                             <option value="<?= $m->id ?>">
-                                <?= html_escape($m->name) ?> — Flat <?= html_escape($m->flat_no) ?> (<?= ucfirst($m->member_type) ?>)
+                                <?= html_escape($m->name) ?> — Flat <?= html_escape($m->flat_no) ?> (<?= ($m->member_type) ?>)
                             </option>
                         <?php endforeach; ?>
                     </select>
@@ -774,14 +877,12 @@ function openViewModal(f) {
     document.getElementById('vd_email').innerText   = f.resident_email || '—';
     document.getElementById('vd_movein').innerText  = f.move_in_date || '—';
 
-    const statusColors = { occupied:'#d1fae5', vacant:'#fef3c7', blocked:'#fee2e2' };
-    const textColors   = { occupied:'#065f46', vacant:'#92400e', blocked:'#991b1b' };
-    const statusBadge  = document.getElementById('vd_status_badge');
+    const statusBadge = document.getElementById('vd_status_badge');
     statusBadge.innerHTML = `<span class="status-badge ${f.status}" style="font-size:.82rem;padding:5px 14px;">${f.status.charAt(0).toUpperCase()+f.status.slice(1)}</span>`;
 
     const remarkWrap = document.getElementById('vd_remarks_wrap');
     if (f.remarks) { document.getElementById('vd_remarks').innerText = f.remarks; remarkWrap.style.display='block'; }
-    else { remarkWrap.style.display='none'; }
+    else           { remarkWrap.style.display='none'; }
 
     openModal('viewFlatModal');
 }
@@ -793,7 +894,7 @@ function ordinalJS(n) {
 
 /* ──────── ASSIGN ──────── */
 function openAssignModal(flatId, flatNo) {
-    document.getElementById('assignFlatId').value      = flatId;
+    document.getElementById('assignFlatId').value       = flatId;
     document.getElementById('assignFlatLabel').innerText = flatNo;
     openModal('assignModal');
 }
@@ -808,8 +909,8 @@ function toggleFloorCard(fl) {
 
 /* ──────── VIEW SWITCH ──────── */
 function switchView(v) {
-    const tv = document.getElementById('tableView');
-    const gv = document.getElementById('gridView');
+    const tv   = document.getElementById('tableView');
+    const gv   = document.getElementById('gridView');
     const btnT = document.getElementById('btnTableView');
     const btnG = document.getElementById('btnGridView');
     if (v === 'table') {
@@ -833,6 +934,15 @@ function exportCSV() {
 }
 function printTable() { window.print(); }
 
+/* ──────── PER-PAGE CHANGE ──────── */
+function changePerPage(val) {
+    // Build current URL, replace per_page param, reset to page 1
+    const url = new URL(window.location.href);
+    url.searchParams.set('per_page', val);
+    url.searchParams.set('page', '1');
+    window.location.href = url.toString();
+}
+
 /* ──────── INIT ──────── */
 document.addEventListener('DOMContentLoaded', function () {
     // Flash auto-dismiss
@@ -840,8 +950,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (f) setTimeout(() => { f.style.transition='opacity .5s'; f.style.opacity='0'; setTimeout(()=>f.remove(),500); }, 3500);
 
     // Restore view preference
-    const savedView = localStorage.getItem('flatUnitView') || 'table';
-    switchView(savedView);
+    switchView(localStorage.getItem('flatUnitView') || 'table');
 
     // Animate occupancy bar
     setTimeout(() => {
@@ -849,6 +958,14 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('barVac').style.width   = '<?= $vacantPercent ?>%';
         document.getElementById('barBlock').style.width = '<?= $blockedPercent ?>%';
     }, 300);
+
+    // Sync per-page selector with URL
+    const url = new URL(window.location.href);
+    const pp  = url.searchParams.get('per_page');
+    if (pp) {
+        const sel = document.getElementById('perPageSel');
+        if (sel) sel.value = pp;
+    }
 });
 </script>
 </body>

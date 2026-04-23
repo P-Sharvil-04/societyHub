@@ -15,10 +15,10 @@ class feature_controller extends CI_Controller
 			redirect('login');
 		}
 	}
-	public function residents()
-	{
-		$this->load->view('residents_view');
-	}
+	// public function residents()
+	// {
+	// 	$this->load->view('residents_view');
+	// }
 	// public function staff()
 	// {
 	// 	$this->load->model('staff_model');
@@ -187,21 +187,22 @@ class feature_controller extends CI_Controller
 	// {
 	// 	$this->load->view('notices_view');
 	// }
+
 	public function aminities()
 	{
 		$data['title'] = 'aminities';
 
 		$this->load->view('aminities_view', $data);
 	}
-	public function reports()
-	{
-		$data['title'] = 'reports';
-		$this->load->view('report_view', $data);
-	}
-	public function visitors()
-	{
-		$this->load->view('visitors_view');
-	}
+	// public function reports()
+	// {
+	// 	$data['title'] = 'reports';
+	// 	$this->load->view('report_view', $data);
+	// }
+	// public function visitors()
+	// {
+	// 	$this->load->view('visitors_view');
+	// }
 	// ========== get member ==============
 
 	public function member()
@@ -209,6 +210,13 @@ class feature_controller extends CI_Controller
 		$role_name = $this->session->userdata('role_name');
 		$society_id = $this->session->userdata('society_id');
 		$isSuperAdmin = ($role_name === 'super_admin');
+
+		// Pagination settings
+		$per_page = 10; // Items per page
+		$page = (int) $this->input->get('page') ?: 1;
+		if ($page < 1)
+			$page = 1;
+		$offset = ($page - 1) * $per_page;
 
 		$filters = [
 			'society_id' => $isSuperAdmin ? ((int) $this->input->get('society_id') ?: '') : $society_id,
@@ -221,8 +229,46 @@ class feature_controller extends CI_Controller
 		if ($filters['status'] === null || $filters['status'] === false)
 			$filters['status'] = '';
 
-		$members = $this->manage_member_model->get_filtered($filters);
+		// Get total count for pagination
+		$total_rows = $this->manage_member_model->count_filtered($filters);
+
+		// Get paginated members
+		$members = $this->manage_member_model->get_filtered($filters, $per_page, $offset);
+
+		// Pagination config
+		$this->load->library('pagination');
+		$config['base_url'] = site_url('manage_member') . '?' . http_build_query(array_filter($filters));
+		$config['total_rows'] = $total_rows;
+		$config['per_page'] = $per_page;
+		$config['page_query_string'] = TRUE;
+		$config['query_string_segment'] = 'page';
+		$config['use_page_numbers'] = TRUE;
+		$config['reuse_query_string'] = TRUE;
+		$config['full_tag_open'] = '<ul class="pagination">';
+		$config['full_tag_close'] = '</ul>';
+		$config['first_link'] = '«';
+		$config['last_link'] = '»';
+		$config['next_link'] = '›';
+		$config['prev_link'] = '‹';
+		$config['num_tag_open'] = '<li class="page-item">';
+		$config['num_tag_close'] = '</li>';
+		$config['cur_tag_open'] = '<li class="page-item active"><span class="page-link">';
+		$config['cur_tag_close'] = '</span></li>';
+		$config['next_tag_open'] = '<li class="page-item">';
+		$config['next_tag_close'] = '</li>';
+		$config['prev_tag_open'] = '<li class="page-item">';
+		$config['prev_tag_close'] = '</li>';
+		$config['first_tag_open'] = '<li class="page-item">';
+		$config['first_tag_close'] = '</li>';
+		$config['last_tag_open'] = '<li class="page-item">';
+		$config['last_tag_close'] = '</li>';
+		$config['attributes'] = ['class' => 'page-link'];
+
+		$this->pagination->initialize($config);
+		$pagination_links = $this->pagination->create_links();
+
 		$stats = $this->manage_member_model->get_stats($filters);
+
 		$societyGroups = [];
 		if ($isSuperAdmin) {
 			foreach ($members as $m) {
@@ -236,7 +282,7 @@ class feature_controller extends CI_Controller
 			? $this->manage_member_model->get_wings($filters['society_id'] ?: null)
 			: $this->manage_member_model->get_wings($society_id);
 
-		// ── NEW: vacant flats for the flat picker ──
+		// Vacant flats for the flat picker
 		$vacantFlats = [];
 		if (!$isSuperAdmin && $society_id) {
 			$this->load->model('Society_setup_model', 'setup_model');
@@ -252,7 +298,7 @@ class feature_controller extends CI_Controller
 			'wings' => $wings,
 			'committee_roles' => $this->manage_member_model->get_roles(),
 			'filters' => $filters,
-			'vacantFlats' => $vacantFlats,   // ← NEW
+			'vacantFlats' => $vacantFlats,
 			'totalMembers' => $stats['total'],
 			'owners' => $stats['owners'],
 			'tenants' => $stats['tenants'],
@@ -262,6 +308,10 @@ class feature_controller extends CI_Controller
 			'newThisMonth' => $stats['new_this_month'],
 			'ownerPercent' => $stats['total'] > 0 ? round(($stats['owners'] / $stats['total']) * 100) : 0,
 			'tenantPercent' => $stats['total'] > 0 ? round(($stats['tenants'] / $stats['total']) * 100) : 0,
+			'pagination' => $pagination_links, // Added
+			'total_records' => $total_rows,     // Added
+			'per_page' => $per_page,
+			'current_page' => $page,
 		];
 
 		$this->load->view('header', $data);
@@ -477,34 +527,45 @@ class feature_controller extends CI_Controller
 	}
 	public function filter_ajax()
 	{
-		$role_name = $this->session->userdata('role_name');
-		$society_id = $this->session->userdata('society_id');
-
-		$filters = [
-			'society_id' => $this->input->post('society_id'),
-			'wing_id' => $this->input->post('wing_id'),
-			'member_type' => $this->input->post('member_type'),
-			'search' => $this->input->post('search')
-		];
-
-		if ($role_name !== 'super_admin') {
-			$filters['society_id'] = $society_id;
-		}
+		$filters = $this->input->post();
 
 		$members = $this->manage_member_model->get_filtered($filters);
 
+		$html = "";
 		foreach ($members as $m) {
 
-			echo "<tr>
-        <td>" . html_escape($m->name) . "</td>
-        <td>" . html_escape($m->flat_no) . "</td>
-        <td>" . html_escape($m->wing_name) . "</td>
-        <td>" . ucfirst($m->member_type) . "</td>
-        <td>" . $m->committee_role . "</td>
-        <td>" . ($m->status ? 'Active' : 'Inactive') . "</td>
-        </tr>";
+			$status = ($m->status == 1) ? 'Active' : 'Inactive';
+			$modalId = 'vm_' . $m->id; // generate properly
 
+			$memberData = htmlspecialchars(json_encode([
+				"id" => $m->id,
+				"name" => $m->name,
+				"flat_no" => $m->flat_no,
+				"wing_id" => $m->wing_id,
+				"member_type" => $m->member_type,
+				"phone" => $m->phone,
+				"email" => $m->email,
+				"status" => $m->status
+			]), ENT_QUOTES, 'UTF-8');
+
+			$html .= "<tr>
+        <td>{$m->name}</td>
+        <td>{$m->flat_no}</td>
+        <td>{$m->wing_name}</td>
+        <td>{$m->member_type}</td>
+        <td>" . ($m->committee_role ?? '-') . "</td>
+			<td>{$m->society_name}</td>
+        <td>{$status}</td>
+        <td>
+              <button class='btn-icon' 
+                        onclick=\"openModal('{$modalId}')\">
+                    <i class='fas fa-eye'></i>
+                </button>
+        </td>
+    </tr>";
 		}
+
+		echo json_encode(['html' => $html]);
 	}
 	// ── WELCOME EMAIL ──
 	private function _sendWelcomeEmail($member, $plainPassword)
